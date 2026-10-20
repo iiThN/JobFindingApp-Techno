@@ -1,13 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   ScrollView,
   Text,
   TouchableOpacity,
-  View,
-  Image,
-  BackHandler
+  View
 } from "react-native";
 
 import { router } from "expo-router";
@@ -49,25 +48,14 @@ export default function Login() {
     Alert.alert("Success", "Login successful!", [
       {
         text: "OK",
-        onPress: () => router.replace("/(tabs)"),
+        onPress: () => {
+          const isEmployer = String(result.user?.role || "").toLowerCase().includes("employer");
+          router.replace(isEmployer ? "/(tabs)/(employer)/dashboard" : "/(tabs)/(jobseeker)");
+        },
       },
     ]);
   };
 
-  // useEffect(() => {
-
-  //   const backAction = () => {
-
-  //     return true; 
-  //   };
-
-  //   const backHandler = BackHandler.addEventListener(
-  //     'hardwareBackPress',
-  //     backAction
-  //   );
-
-  //   return () => backHandler.remove();
-  // }, []);
 
   return (
     <SafeAreaView style={styles.container}>

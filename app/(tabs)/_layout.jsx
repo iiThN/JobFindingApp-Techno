@@ -13,7 +13,8 @@ export default function DrawerLayout() {
         swipeEnabled: true,
       }}
     >
-      <Drawer.Screen name="(main)" options={{ title: "Home" }} />
+      <Drawer.Screen name="(jobseeker)" options={{ title: "Job Seeker" }} />
+      <Drawer.Screen name="(employer)" options={{ title: "Employer" }} />
     </Drawer>
   );
 }
