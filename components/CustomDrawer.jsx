@@ -16,7 +16,7 @@ export default function CustomDrawer(props) {
   const router = useRouter();
   const { currentUser, logout } = useAuth();
   const isEmployer = String(currentUser?.role || "").toLowerCase().includes("employer");
-  const name = (isEmployer && currentUser?.company) || currentUser?.name || "Your Account";
+  const name = (isEmployer && currentUser?.companyName) || currentUser?.name || "Your Account";
   const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 
   const handleLogout = () => {
