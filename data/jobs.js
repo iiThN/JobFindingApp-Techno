@@ -1,0 +1,9 @@
+// Sample jobs para sa dynamic routes.
+const jobs = [
+  { id: '1', title: 'Junior Frontend Developer', company: 'Tech Solutions Inc.', location: 'Remote', type: 'Full-time', salary: '₱25K – ₱40K / month', icon: 'code-tags', color: '#E9ECFF', description: 'Build responsive websites and help maintain user interfaces.', requirements: ['Basic HTML, CSS and JavaScript', 'Familiarity with React', 'Willingness to learn'] },
+  { id: '2', title: 'UI/UX Designer', company: 'Creative Studio', location: 'Cagayan de Oro', type: 'Full-time', salary: '₱22K – ₱35K / month', icon: 'palette-outline', color: '#F0E7FF', description: 'Design clear and accessible interfaces for mobile and web.', requirements: ['Basic Figma skills', 'Understanding of UI design', 'Portfolio of sample designs'] },
+  { id: '3', title: 'Customer Support Associate', company: 'Bright Media', location: 'Cagayan de Oro', type: 'Full-time', salary: '₱18K – ₱25K / month', icon: 'headset', color: '#E9ECFF', description: 'Assist customers with inquiries and provide helpful support.', requirements: ['Good communication skills', 'Basic computer skills', 'Customer-focused attitude'] },
+  { id: '4', title: 'Data Entry Specialist', company: 'RemotePro', location: 'Remote', type: 'Part-time', salary: '₱12K – ₱18K / month', icon: 'keyboard-outline', color: '#FFF3CF', description: 'Encode, organize and verify information accurately.', requirements: ['Typing skills', 'Attention to detail', 'Basic spreadsheet knowledge'] },
+  { id: '5', title: 'Mobile App Developer', company: 'InnovateTech', location: 'Cebu City', type: 'Full-time', salary: '₱30K – ₱50K / month', icon: 'cellphone', color: '#DCF8ED', description: 'Help create and improve mobile applications.', requirements: ['Basic JavaScript', 'Familiarity with React Native', 'Problem-solving skills'] },
+];
+export default jobs;
