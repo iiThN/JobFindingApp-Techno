@@ -8,7 +8,7 @@ export function ApplicationsProvider({ children }) {
   const hasApplied = (jobId) =>
     applications.some((item) => item.jobId === String(jobId));
 
-  const applyToJob = (jobId) => {
+  const applyToJob = (jobId, details = {}) => {
     if (hasApplied(jobId)) {
       return { success: false, message: "You already applied to this job." };
     }
@@ -18,6 +18,8 @@ export function ApplicationsProvider({ children }) {
         jobId: String(jobId),
         status: "Pending",
         appliedAt: new Date().toISOString(),
+        // galing sa Apply for Job form (fullName, email, resume, note)
+        details,
       },
       ...previous,
     ]);

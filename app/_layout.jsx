@@ -64,6 +64,7 @@ export default function RootLayout() {
 
         
         <Stack.Screen name="details/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="apply/[id]" options={{ headerShown: false }} />
       </Stack>
       </ApplicationsProvider>
     </AuthProvider>

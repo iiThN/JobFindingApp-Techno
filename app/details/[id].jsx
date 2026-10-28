@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Alert } from "react-native"; // add to your react-native import
 import styles from "../../components/stylesIn";
 import { useApplications } from "../../context/ApplicationsContext";
 import jobs from "../../data/jobs";
@@ -18,22 +17,13 @@ export default function JobDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
 
-  const { hasApplied, applyToJob } = useApplications();
+  const { hasApplied } = useApplications();
   const applied = hasApplied(id);
 
+  // Apply Now -> buksan ang "Apply for Job" form.
   const handleApply = () => {
-  const result = applyToJob(job.id);
-
-  if (!result.success) {
-    Alert.alert("Already applied", result.message);
-    return;
-  }
-
-  Alert.alert("Application sent", "You can track it in the Applications tab.", [
-    { text: "Stay here" },
-    { text: "View applications", onPress: () => router.navigate("/jobApps") },
-  ]);
-};
+    router.push({ pathname: "/apply/[id]", params: { id: String(id) } });
+  };
 
   // gamit ang ID sa pagsearch sa jobs nga idisplay.
   const job = jobs.find((item) => String(item.id) === String(id));
