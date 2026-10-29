@@ -72,6 +72,7 @@ export default function GetVerified() {
 
     setError("");
 
+    
     const result = register({
       name: String(name),
       email: String(email),
@@ -80,17 +81,17 @@ export default function GetVerified() {
       companyName,
       companyLoc,
       branch,
-<<<<<<< HEAD
-      // Submitted requirements – reviewed by an admin under "Verify Employer"
+
+      // Requirements submitted for Admin verification
       documents: selectedFiles.map((file) => ({
         name: file.name,
         uri: file.uri,
         size: file.size,
         mimeType: file.mimeType,
       })),
-=======
+
+      // Employer is waiting for Admin approval
       verificationPending: true,
->>>>>>> target/Jamisola/techno_app
     });
 
     if (!result.success) {
