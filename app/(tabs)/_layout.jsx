@@ -15,7 +15,10 @@ export default function DrawerLayout() {
     >
       <Drawer.Screen name="(jobseeker)" options={{ title: "Job Seeker" }} />
       <Drawer.Screen name="(employer)" options={{ title: "Employer" }} />
+<<<<<<< HEAD
       <Drawer.Screen name="(admin)" options={{ title: "Admin" }} />
+=======
+>>>>>>> target/Jamisola/techno_app
     </Drawer>
   );
 }

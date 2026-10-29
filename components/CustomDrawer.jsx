@@ -15,10 +15,16 @@ const menuItems = [
 export default function CustomDrawer(props) {
   const router = useRouter();
   const { currentUser, logout } = useAuth();
+<<<<<<< HEAD
   const isAdmin = currentUser?.role === "Admin";
   const isEmployer = String(currentUser?.role || "").toLowerCase().includes("employer");
   const name = (isEmployer && currentUser?.companyName) || currentUser?.name || "Your Account";
   const initials = name.split(" ").filter(Boolean).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+=======
+  const isEmployer = String(currentUser?.role || "").toLowerCase().includes("employer");
+  const name = (isEmployer && currentUser?.companyName) || currentUser?.name || "Your Account";
+  const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+>>>>>>> target/Jamisola/techno_app
 
   const handleLogout = () => {
     props.navigation.closeDrawer();
@@ -47,7 +53,11 @@ export default function CustomDrawer(props) {
           </View>
           <View style={styles.accountInfo}>
             <Text style={styles.name} numberOfLines={1}>{name}</Text>
+<<<<<<< HEAD
             <Text style={styles.role}>{isAdmin ? "Administrator" : isEmployer ? "Employer" : "Job Seeker"}</Text>
+=======
+            <Text style={styles.role}>{isEmployer ? "Employer" : "Job Seeker"}</Text>
+>>>>>>> target/Jamisola/techno_app
             {!!currentUser?.email && <Text style={styles.email} numberOfLines={1}>{currentUser.email}</Text>}
           </View>
         </View>

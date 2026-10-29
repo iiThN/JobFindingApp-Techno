@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from "react";
+<<<<<<< HEAD
 import { ADMIN_ROLE, BUILT_IN_ADMINS } from "../data/admins";
 
 const AuthContext = createContext(null);
@@ -12,6 +13,13 @@ export function AuthProvider({ children }) {
   // The five built-in admins are part of the initial state, so they exist
   // before anyone registers and can't be removed or re-registered.
   const [accounts, setAccounts] = useState(BUILT_IN_ADMINS);
+=======
+
+const AuthContext = createContext(null);
+
+export function AuthProvider({ children }) {
+  const [accounts, setAccounts] = useState([]);
+>>>>>>> target/Jamisola/techno_app
   const [currentUser, setCurrentUser] = useState(null);
 
   const register = (account) => {
@@ -25,6 +33,7 @@ export function AuthProvider({ children }) {
       return { success: false, message: "An account with this email already exists." };
     }
 
+<<<<<<< HEAD
     // Public registration can never create an admin.
     if (String(account.role || "").toLowerCase() === ADMIN_ROLE.toLowerCase()) {
       return { success: false, message: "This role is not available for registration." };
@@ -44,6 +53,11 @@ export function AuthProvider({ children }) {
           verificationSubmittedAt: new Date().toISOString(),
         }),
       },
+=======
+    setAccounts((previousAccounts) => [
+      ...previousAccounts,
+      { ...account, email: normalizedEmail },
+>>>>>>> target/Jamisola/techno_app
     ]);
 
     return { success: true };
@@ -63,6 +77,7 @@ export function AuthProvider({ children }) {
       };
     }
 
+<<<<<<< HEAD
     if (account.status === "suspended") {
       return {
         success: false,
@@ -71,12 +86,20 @@ export function AuthProvider({ children }) {
     }
 
     setCurrentUser(toSessionUser(account));
+=======
+    setCurrentUser({
+      name: account.name,
+      email: account.email,
+      role: account.role,
+    });
+>>>>>>> target/Jamisola/techno_app
 
     return { success: true, user: account };
   };
 
   const logout = () => setCurrentUser(null);
 
+<<<<<<< HEAD
   /* ---------------- Admin actions ---------------- */
 
   const requireAdmin = () =>
@@ -154,6 +177,10 @@ export function AuthProvider({ children }) {
         reviewEmployer,
       }}
     >
+=======
+  return (
+    <AuthContext.Provider value={{ accounts, currentUser, register, login, logout }}>
+>>>>>>> target/Jamisola/techno_app
       {children}
     </AuthContext.Provider>
   );
@@ -167,4 +194,8 @@ export function useAuth() {
   }
 
   return context;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> target/Jamisola/techno_app

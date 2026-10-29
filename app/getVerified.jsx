@@ -80,6 +80,7 @@ export default function GetVerified() {
       companyName,
       companyLoc,
       branch,
+<<<<<<< HEAD
       // Submitted requirements – reviewed by an admin under "Verify Employer"
       documents: selectedFiles.map((file) => ({
         name: file.name,
@@ -87,6 +88,9 @@ export default function GetVerified() {
         size: file.size,
         mimeType: file.mimeType,
       })),
+=======
+      verificationPending: true,
+>>>>>>> target/Jamisola/techno_app
     });
 
     if (!result.success) {
