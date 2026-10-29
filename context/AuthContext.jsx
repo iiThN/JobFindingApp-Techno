@@ -1,27 +1,21 @@
+
 import { createContext, useContext, useState } from "react";
-<<<<<<< HEAD
 import { ADMIN_ROLE, BUILT_IN_ADMINS } from "../data/admins";
 
 const AuthContext = createContext(null);
 
-const isEmployerRole = (role) => String(role || "").toLowerCase().includes("employer");
+const isEmployerRole = (role) =>
+  String(role || "").toLowerCase().includes("employer");
 
-// Never expose the password to the rest of the app.
+// Remove password from session data
 const toSessionUser = ({ password, ...account }) => account;
 
 export function AuthProvider({ children }) {
-  // The five built-in admins are part of the initial state, so they exist
-  // before anyone registers and can't be removed or re-registered.
+  // Built-in Admin accounts
   const [accounts, setAccounts] = useState(BUILT_IN_ADMINS);
-=======
-
-const AuthContext = createContext(null);
-
-export function AuthProvider({ children }) {
-  const [accounts, setAccounts] = useState([]);
->>>>>>> target/Jamisola/techno_app
   const [currentUser, setCurrentUser] = useState(null);
 
+  // Register Job Seeker or Employer
   const register = (account) => {
     const normalizedEmail = account.email.trim().toLowerCase();
 
@@ -30,13 +24,21 @@ export function AuthProvider({ children }) {
     );
 
     if (alreadyExists) {
-      return { success: false, message: "An account with this email already exists." };
+      return {
+        success: false,
+        message: "An account with this email already exists.",
+      };
     }
 
-<<<<<<< HEAD
-    // Public registration can never create an admin.
-    if (String(account.role || "").toLowerCase() === ADMIN_ROLE.toLowerCase()) {
-      return { success: false, message: "This role is not available for registration." };
+    // Prevent public Admin registration
+    if (
+      String(account.role || "").toLowerCase() ===
+      ADMIN_ROLE.toLowerCase()
+    ) {
+      return {
+        success: false,
+        message: "This role is not available for registration.",
+      };
     }
 
     const employer = isEmployerRole(account.role);
@@ -48,21 +50,19 @@ export function AuthProvider({ children }) {
         email: normalizedEmail,
         status: "active",
         createdAt: new Date().toISOString(),
+
         ...(employer && {
+          verificationPending: true,
           verificationStatus: "Pending",
           verificationSubmittedAt: new Date().toISOString(),
         }),
       },
-=======
-    setAccounts((previousAccounts) => [
-      ...previousAccounts,
-      { ...account, email: normalizedEmail },
->>>>>>> target/Jamisola/techno_app
     ]);
 
     return { success: true };
   };
 
+  // Login
   const login = (email, password) => {
     const account = accounts.find(
       (item) =>
@@ -73,78 +73,113 @@ export function AuthProvider({ children }) {
     if (!account) {
       return {
         success: false,
-        message: "Incorrect email or password, or this account is not registered.",
+        message:
+          "Incorrect email or password, or this account is not registered.",
       };
     }
 
-<<<<<<< HEAD
+    // Block suspended accounts
     if (account.status === "suspended") {
       return {
         success: false,
-        message: "This account has been suspended. Please contact an administrator.",
+        message:
+          "This account has been suspended. Please contact an administrator.",
       };
     }
 
     setCurrentUser(toSessionUser(account));
-=======
-    setCurrentUser({
-      name: account.name,
-      email: account.email,
-      role: account.role,
-    });
->>>>>>> target/Jamisola/techno_app
 
-    return { success: true, user: account };
+    return {
+      success: true,
+      user: toSessionUser(account),
+    };
   };
 
-  const logout = () => setCurrentUser(null);
+  // Logout
+  const logout = () => {
+    setCurrentUser(null);
+  };
 
-<<<<<<< HEAD
-  /* ---------------- Admin actions ---------------- */
-
+  // Check Admin permission
   const requireAdmin = () =>
     currentUser?.role === ADMIN_ROLE
       ? null
-      : { success: false, message: "Only administrators can do this." };
+      : {
+          success: false,
+          message: "Only administrators can do this.",
+        };
 
-  // Manage users: suspend / re-activate (admins themselves are protected)
+  // Admin: Suspend or reactivate user
   const setAccountStatus = (email, status) => {
     const denied = requireAdmin();
     if (denied) return denied;
 
-    const target = accounts.find((item) => item.email === email);
+    const target = accounts.find(
+      (item) => item.email === email
+    );
+
     if (!target || target.role === ADMIN_ROLE) {
-      return { success: false, message: "This account can't be changed." };
+      return {
+        success: false,
+        message: "This account can't be changed.",
+      };
     }
 
     setAccounts((previous) =>
-      previous.map((item) => (item.email === email ? { ...item, status } : item))
+      previous.map((item) =>
+        item.email === email
+          ? { ...item, status }
+          : item
+      )
     );
+
     return { success: true };
   };
 
-  // Manage users: delete
+  // Admin: Delete user
   const deleteAccount = (email) => {
     const denied = requireAdmin();
     if (denied) return denied;
 
-    const target = accounts.find((item) => item.email === email);
+    const target = accounts.find(
+      (item) => item.email === email
+    );
+
     if (!target || target.role === ADMIN_ROLE) {
-      return { success: false, message: "This account can't be deleted." };
+      return {
+        success: false,
+        message: "This account can't be deleted.",
+      };
     }
 
-    setAccounts((previous) => previous.filter((item) => item.email !== email));
+    setAccounts((previous) =>
+      previous.filter((item) => item.email !== email)
+    );
+
     return { success: true };
   };
 
-  // Verify employer: decision is "Verified" or "Rejected"
+  // Admin: Verify or reject employer
   const reviewEmployer = (email, decision, remarks = "") => {
     const denied = requireAdmin();
     if (denied) return denied;
 
-    const target = accounts.find((item) => item.email === email);
+    const target = accounts.find(
+      (item) => item.email === email
+    );
+
     if (!target || !isEmployerRole(target.role)) {
-      return { success: false, message: "Employer not found." };
+      return {
+        success: false,
+        message: "Employer not found.",
+      };
+    }
+
+    if (!["Verified", "Rejected"].includes(decision)) {
+      return {
+        success: false,
+        message: "Invalid verification decision.",
+      };
     }
 
     setAccounts((previous) =>
@@ -152,6 +187,7 @@ export function AuthProvider({ children }) {
         item.email === email
           ? {
               ...item,
+              verificationPending: false,
               verificationStatus: decision,
               verificationRemarks: remarks,
               reviewedBy: currentUser.email,
@@ -161,6 +197,7 @@ export function AuthProvider({ children }) {
           : item
       )
     );
+
     return { success: true };
   };
 
@@ -177,10 +214,6 @@ export function AuthProvider({ children }) {
         reviewEmployer,
       }}
     >
-=======
-  return (
-    <AuthContext.Provider value={{ accounts, currentUser, register, login, logout }}>
->>>>>>> target/Jamisola/techno_app
       {children}
     </AuthContext.Provider>
   );
@@ -194,8 +227,4 @@ export function useAuth() {
   }
 
   return context;
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> target/Jamisola/techno_app

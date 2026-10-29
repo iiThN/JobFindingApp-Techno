@@ -45,11 +45,11 @@ export default function Login() {
     setEmail("");
     setPassword("");
 
+    
     Alert.alert("Success", "Login successful!", [
       {
         text: "OK",
         onPress: () => {
-<<<<<<< HEAD
           const role = String(result.user?.role || "").toLowerCase();
 
           if (role === "admin") {
@@ -59,10 +59,6 @@ export default function Login() {
           } else {
             router.replace("/(tabs)/(jobseeker)");
           }
-=======
-          const isEmployer = String(result.user?.role || "").toLowerCase().includes("employer");
-          router.replace(isEmployer ? "/(tabs)/(employer)/dashboard" : "/(tabs)/(jobseeker)");
->>>>>>> target/Jamisola/techno_app
         },
       },
     ]);
