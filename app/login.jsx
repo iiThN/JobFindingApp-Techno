@@ -49,8 +49,20 @@ export default function Login() {
       {
         text: "OK",
         onPress: () => {
+<<<<<<< HEAD
+          const role = String(result.user?.role || "").toLowerCase();
+
+          if (role === "admin") {
+            router.replace("/(tabs)/(admin)/dashboard");
+          } else if (role.includes("employer")) {
+            router.replace("/(tabs)/(employer)/dashboard");
+          } else {
+            router.replace("/(tabs)/(jobseeker)");
+          }
+=======
           const isEmployer = String(result.user?.role || "").toLowerCase().includes("employer");
           router.replace(isEmployer ? "/(tabs)/(employer)/dashboard" : "/(tabs)/(jobseeker)");
+>>>>>>> target/Jamisola/techno_app
         },
       },
     ]);
