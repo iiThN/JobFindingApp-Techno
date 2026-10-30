@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import ApplicationCard from "../../../components/ApplicationCard";
 import { TopNav } from "../../../components/Navigations";
 import { useApplications } from "../../../context/ApplicationsContext";
-import jobs from "../../../data/jobs";
+import jobs from "../../../data/jobseeker_data/jobs";
 
 const FILTERS = ["All", "Pending", "Rejected"];
 

@@ -9,9 +9,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import jobs from "../../data/jobseeker_data/jobs";
 import styles from "../../components/stylesIn";
 import { useApplications } from "../../context/ApplicationsContext";
-import jobs from "../../data/jobs";
 
 export default function JobDetails() {
   const { id } = useLocalSearchParams();

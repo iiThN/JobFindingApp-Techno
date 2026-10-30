@@ -18,7 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useApplications } from "../../context/ApplicationsContext";
 import { useAuth } from "../../context/AuthContext";
-import jobs from "../../data/jobs";
+import jobs from "../../data/jobseeker_data/jobs";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
