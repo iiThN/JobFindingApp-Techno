@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState } from "react";
 
 const ApplicationsContext = createContext(null);
@@ -10,7 +11,10 @@ export function ApplicationsProvider({ children }) {
 
   const applyToJob = (jobId, details = {}) => {
     if (hasApplied(jobId)) {
-      return { success: false, message: "You already applied to this job." };
+      return {
+        success: false,
+        message: "You already applied to this job.",
+      };
     }
 
     setApplications((previous) => [
@@ -18,7 +22,7 @@ export function ApplicationsProvider({ children }) {
         jobId: String(jobId),
         status: "Pending",
         appliedAt: new Date().toISOString(),
-        // galing sa Apply for Job form (fullName, email, resume, note)
+        // Application details apil ang multiple attachments
         details,
       },
       ...previous,
@@ -28,7 +32,9 @@ export function ApplicationsProvider({ children }) {
   };
 
   return (
-    <ApplicationsContext.Provider value={{ applications, hasApplied, applyToJob }}>
+    <ApplicationsContext.Provider
+      value={{ applications, hasApplied, applyToJob }}
+    >
       {children}
     </ApplicationsContext.Provider>
   );
@@ -36,8 +42,12 @@ export function ApplicationsProvider({ children }) {
 
 export function useApplications() {
   const context = useContext(ApplicationsContext);
+
   if (!context) {
-    throw new Error("useApplications must be used inside ApplicationsProvider.");
+    throw new Error(
+      "useApplications must be used inside ApplicationsProvider."
+    );
   }
+
   return context;
 }
