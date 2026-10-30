@@ -9,6 +9,7 @@ export default function RootLayout() {
     <AuthProvider>
       <ApplicationsProvider>
       <Stack
+      
       screenOptions={{
         statusBarStyle: 'dark', 
       }}

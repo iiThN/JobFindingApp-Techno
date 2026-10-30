@@ -45,12 +45,20 @@ export default function Login() {
     setEmail("");
     setPassword("");
 
+    
     Alert.alert("Success", "Login successful!", [
       {
         text: "OK",
         onPress: () => {
-          const isEmployer = String(result.user?.role || "").toLowerCase().includes("employer");
-          router.replace(isEmployer ? "/(tabs)/(employer)/dashboard" : "/(tabs)/(jobseeker)");
+          const role = String(result.user?.role || "").toLowerCase();
+
+          if (role === "admin") {
+            router.replace("/(tabs)/(admin)/dashboard");
+          } else if (role.includes("employer")) {
+            router.replace("/(tabs)/(employer)/dashboard");
+          } else {
+            router.replace("/(tabs)/(jobseeker)");
+          }
         },
       },
     ]);
