@@ -18,14 +18,15 @@ export default function DrawerLayout() {
       }}
     >
       <Drawer.Screen
+        name="(employer)"
+        options={{ title: "Employer" }}
+      />
+      <Drawer.Screen
         name="(jobseeker)"
         options={{ title: "Job Seeker" }}
       />
 
-      <Drawer.Screen
-        name="(employer)"
-        options={{ title: "Employer" }}
-      />
+      
 
       <Drawer.Screen
         name="(admin)"
