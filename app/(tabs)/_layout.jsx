@@ -17,11 +17,6 @@ export default function DrawerLayout() {
         swipeEnabled: true,
       }}
     >
-<<<<<<< HEAD
-      
-      <Drawer.Screen name="(employer)" options={{ title: "Employer" }} />
-      <Drawer.Screen name="(jobseeker)" options={{ title: "Job Seeker" }} />
-=======
       <Drawer.Screen
         name="(jobseeker)"
         options={{ title: "Job Seeker" }}
@@ -36,7 +31,6 @@ export default function DrawerLayout() {
         name="(admin)"
         options={{ title: "Admin" }}
       />
->>>>>>> 26d0026d6731a32cdc64d2ea02f2803ef57e3325
     </Drawer>
   );
 }
