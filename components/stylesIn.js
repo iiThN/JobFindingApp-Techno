@@ -1,4 +1,3 @@
-
 import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
@@ -120,7 +119,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
 
-  // Mga estilo sa Home screen.
+  // Home screen styles.
   homeContainer: {
     flex: 1,
     backgroundColor: "#F6F8FF",
@@ -230,7 +229,115 @@ const styles = StyleSheet.create({
     paddingRight: 19,
   },
 
-  // Mga estilo sa Job Details.
+  // Employer Header & Modal Styles
+  employerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+
+  employerHeaderTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#111C4B",
+  },
+
+  employerHeaderSubtitle: {
+    fontSize: 12,
+    color: "#7381A2",
+    marginTop: 4,
+  },
+
+  employerPostBtn: {
+    backgroundColor: "#2623D3",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    shadowColor: "#2623D3",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  employerPostBtnText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+
+  employerModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(17, 28, 75, 0.5)",
+    justifyContent: "flex-end",
+  },
+
+  employerModalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 22,
+    maxHeight: "85%",
+  },
+
+  employerModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+
+  employerModalTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#111C4B",
+  },
+
+  employerLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#15204A",
+    marginBottom: 6,
+    marginTop: 12,
+  },
+
+  employerInput: {
+    borderWidth: 1,
+    borderColor: "#EEF0F8",
+    borderRadius: 14,
+    padding: 12,
+    fontSize: 13,
+    backgroundColor: "#F6F8FF",
+    color: "#111C4B",
+  },
+
+  employerSubmitBtn: {
+    backgroundColor: "#2623D3",
+    padding: 16,
+    borderRadius: 15,
+    alignItems: "center",
+    marginTop: 24,
+    marginBottom: 20,
+    shadowColor: "#2623D3",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  employerSubmitBtnText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+
+  // Job Details styles.
   detailsContainer: {
     flex: 1,
     backgroundColor: "#F6F8FF",
@@ -379,7 +486,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  // Mga estilo sa recommended JobCard.
+  // JobCard styles.
   jobCardFeatured: {
     width: 290,
     minHeight: 185,
@@ -441,25 +548,30 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
 
-  // Mga estilo sa latest JobCard.
   jobCardCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 17,
-    padding: 13,
-    marginBottom: 11,
+    padding: 14,
+    marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     borderWidth: 1,
-    borderColor: "#EDF0F7",
+    borderColor: "#EEF0F8",
+    shadowColor: "#111C4B",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2,
   },
 
   jobCardIconBox: {
-    width: 55,
-    height: 60,
-    borderRadius: 14,
+    width: 52,
+    height: 52,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#EEF2FF",
   },
 
   jobCardInfo: {
@@ -467,28 +579,29 @@ const styles = StyleSheet.create({
   },
 
   jobCardTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#121B39",
+    color: "#111C4B",
   },
 
   jobCardCompany: {
-    fontSize: 11,
-    color: "#79839B",
-    marginTop: 5,
+    fontSize: 12,
+    color: "#7381A2",
+    marginTop: 4,
   },
 
   jobCardMeta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
+    gap: 8,
     marginTop: 8,
   },
 
   jobCardTag: {
     fontSize: 10,
+    fontWeight: "600",
     color: "#2623D3",
-    backgroundColor: "#E9ECFF",
+    backgroundColor: "#EEF2FF",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
@@ -497,9 +610,159 @@ const styles = StyleSheet.create({
   jobCardSalary: {
     flex: 1,
     color: "#2623D3",
-    fontSize: 10,
-    fontWeight: "600",
+    fontSize: 11,
+    fontWeight: "700",
     textAlign: "right",
+  },
+  employerModalContainer: {
+    flex: 1,
+    backgroundColor: "#F6F8FF",
+  },
+  employerModalTopBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderColor: "#EEF0F8",
+  },
+  employerCloseModalBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#F6F8FF",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#EEF0F8",
+  },
+  employerToggleRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 6,
+    flexWrap: "wrap",
+  },
+  employerToggleChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+  },
+  employerToggleChipActive: {
+    backgroundColor: "#2623D3",
+    borderColor: "#2623D3",
+  },
+  employerToggleChipText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#2623D3",
+  },
+  employerToggleChipTextActive: {
+    color: "#FFFFFF",
+  },
+  employerSalaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 6,
+  },
+  employerCurrencyBox: {
+    height: 44,
+    width: 38,
+    backgroundColor: "#EEF2FF",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+  },
+  employerCurrencyText: {
+    fontWeight: "800",
+    color: "#2623D3",
+    fontSize: 14,
+  },
+  employerIntervalBadge: {
+    height: 44,
+    paddingHorizontal: 12,
+    backgroundColor: "#EEF2FF",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+  },
+  employerIntervalText: {
+    fontWeight: "800",
+    color: "#2623D3",
+    fontSize: 12,
+  },
+  employerSkillInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#EEF0F8",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 6,
+  },
+  employerAddSkillBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: "#2623D3",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  employerSuggestionsDropdown: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#EEF0F8",
+    marginTop: 4,
+    padding: 6,
+    gap: 4,
+  },
+  employerSuggestionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: "#F6F8FF",
+  },
+  employerSuggestionText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#111C4B",
+  },
+  employerPillsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+  employerSkillPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#EEF2FF",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+  },
+  employerSkillPillText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#2623D3",
   },
 });
 
