@@ -14,7 +14,7 @@ import { TopNav } from "../../../components/Navigations";
 import JobCard from "../../../components/JobCard";
 import styles from "../../../components/stylesIn";
 import { useAuth } from "../../../context/AuthContext";
-import jobs from "../../../data/jobs";
+import jobs from "../../../data/jobseeker_data/jobs";
 
 export default function HomePage() {
   const router = useRouter();

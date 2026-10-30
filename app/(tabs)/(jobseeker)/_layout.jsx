@@ -4,7 +4,7 @@ import { Tabs } from "expo-router";
 import { Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function TabLayout() {
+export default function JobSeekerTabLayout() {
   const insets = useSafeAreaInsets();
 
   const bottomSpace = Math.max(insets.bottom, 12);
