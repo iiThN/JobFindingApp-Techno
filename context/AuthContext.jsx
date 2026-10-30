@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext(null);
@@ -10,16 +11,27 @@ export function AuthProvider({ children }) {
     const normalizedEmail = account.email.trim().toLowerCase();
 
     const alreadyExists = accounts.some(
-      (item) => item.email.toLowerCase() === normalizedEmail
+      (item) =>
+        item.email.toLowerCase() === normalizedEmail
     );
 
     if (alreadyExists) {
-      return { success: false, message: "An account with this email already exists." };
+      return {
+        success: false,
+        message: "An account with this email already exists.",
+      };
     }
+
+    const newAccount = {
+      ...account,
+      email: normalizedEmail,
+      savedJobs: account.savedJobs || [],
+      skills: account.skills || [],
+    };
 
     setAccounts((previousAccounts) => [
       ...previousAccounts,
-      { ...account, email: normalizedEmail },
+      newAccount,
     ]);
 
     return { success: true };
@@ -28,30 +40,68 @@ export function AuthProvider({ children }) {
   const login = (email, password) => {
     const account = accounts.find(
       (item) =>
-        item.email.toLowerCase() === email.trim().toLowerCase() &&
+        item.email.toLowerCase() ===
+          email.trim().toLowerCase() &&
         item.password === password
     );
 
     if (!account) {
       return {
         success: false,
-        message: "Incorrect email or password, or this account is not registered.",
+        message:
+          "Incorrect email or password, or this account is not registered.",
       };
     }
 
     setCurrentUser({
-      name: account.name,
-      email: account.email,
-      role: account.role,
+      ...account,
+      savedJobs: account.savedJobs || [],
+      skills: account.skills || [],
     });
 
     return { success: true, user: account };
   };
 
-  const logout = () => setCurrentUser(null);
+  const updateCurrentUser = (updates) => {
+    setCurrentUser((previousUser) => {
+      if (!previousUser) return previousUser;
+
+      const updatedUser = {
+        ...previousUser,
+        ...updates,
+      };
+
+      const previousEmail = previousUser.email
+        ?.trim()
+        .toLowerCase();
+
+      setAccounts((previousAccounts) =>
+        previousAccounts.map((account) =>
+          account.email?.trim().toLowerCase() === previousEmail
+            ? { ...account, ...updates }
+            : account
+        )
+      );
+
+      return updatedUser;
+    });
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+  };
 
   return (
-    <AuthContext.Provider value={{ accounts, currentUser, register, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        accounts,
+        currentUser,
+        register,
+        login,
+        updateCurrentUser,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -61,7 +111,9 @@ export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider.");
+    throw new Error(
+      "useAuth must be used inside AuthProvider."
+    );
   }
 
   return context;
