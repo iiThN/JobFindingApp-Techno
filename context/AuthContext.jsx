@@ -20,7 +20,8 @@ export function AuthProvider({ children }) {
     const normalizedEmail = account.email.trim().toLowerCase();
 
     const alreadyExists = accounts.some(
-      (item) => item.email.toLowerCase() === normalizedEmail
+      (item) =>
+        item.email.toLowerCase() === normalizedEmail
     );
 
     if (alreadyExists) {
@@ -43,20 +44,24 @@ export function AuthProvider({ children }) {
 
     const employer = isEmployerRole(account.role);
 
+    const newAccount = {
+      ...account,
+      email: normalizedEmail,
+      savedJobs: account.savedJobs || [],
+      skills: account.skills || [],
+      status: "active",
+      createdAt: new Date().toISOString(),
+
+      ...(employer && {
+        verificationPending: true,
+        verificationStatus: "Pending",
+        verificationSubmittedAt: new Date().toISOString(),
+      }),
+    };
+
     setAccounts((previousAccounts) => [
       ...previousAccounts,
-      {
-        ...account,
-        email: normalizedEmail,
-        status: "active",
-        createdAt: new Date().toISOString(),
-
-        ...(employer && {
-          verificationPending: true,
-          verificationStatus: "Pending",
-          verificationSubmittedAt: new Date().toISOString(),
-        }),
-      },
+      newAccount,
     ]);
 
     return { success: true };
@@ -66,7 +71,8 @@ export function AuthProvider({ children }) {
   const login = (email, password) => {
     const account = accounts.find(
       (item) =>
-        item.email.toLowerCase() === email.trim().toLowerCase() &&
+        item.email.toLowerCase() ===
+          email.trim().toLowerCase() &&
         item.password === password
     );
 
@@ -75,6 +81,7 @@ export function AuthProvider({ children }) {
         success: false,
         message:
           "Incorrect email or password, or this account is not registered.",
+
       };
     }
 
@@ -87,11 +94,17 @@ export function AuthProvider({ children }) {
       };
     }
 
-    setCurrentUser(toSessionUser(account));
+    const sessionUser = {
+      ...toSessionUser(account),
+      savedJobs: account.savedJobs || [],
+      skills: account.skills || [],
+    };
+
+    setCurrentUser(sessionUser);
 
     return {
       success: true,
-      user: toSessionUser(account),
+      user: sessionUser,
     };
   };
 
@@ -159,6 +172,34 @@ export function AuthProvider({ children }) {
     return { success: true };
   };
 
+
+
+  // Update current user's profile
+  const updateCurrentUser = (updates) => {
+    setCurrentUser((previousUser) => {
+      if (!previousUser) return previousUser;
+
+      const updatedUser = {
+        ...previousUser,
+        ...updates,
+      };
+
+      const previousEmail = previousUser.email
+        ?.trim()
+        .toLowerCase();
+
+      setAccounts((previousAccounts) =>
+        previousAccounts.map((account) =>
+          account.email?.trim().toLowerCase() === previousEmail
+            ? { ...account, ...updates }
+            : account
+        )
+      );
+
+      return updatedUser;
+    });
+  };
+
   // Admin: Verify or reject employer
   const reviewEmployer = (email, decision, remarks = "") => {
     const denied = requireAdmin();
@@ -201,6 +242,7 @@ export function AuthProvider({ children }) {
     return { success: true };
   };
 
+
   return (
     <AuthContext.Provider
       value={{
@@ -208,6 +250,7 @@ export function AuthProvider({ children }) {
         currentUser,
         register,
         login,
+        updateCurrentUser,
         logout,
         setAccountStatus,
         deleteAccount,
@@ -223,7 +266,9 @@ export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider.");
+    throw new Error(
+      "useAuth must be used inside AuthProvider."
+    );
   }
 
   return context;
