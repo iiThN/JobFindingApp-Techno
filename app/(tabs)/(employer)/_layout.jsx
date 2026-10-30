@@ -54,7 +54,7 @@ export default function EmployerTabLayout() {
         options={{
           title: "Applicants",
           tabBarIcon: ({ color, focused }) => (
-            <MaterialCommunityIcons name={focused ? "account-group" : "account-group-outline"} size={24} color={color} />
+            <MaterialCommunityIcons name={focused ? "file-account" : "file-account-outline"} size={24} color={color} />
           ),
         }}
       />

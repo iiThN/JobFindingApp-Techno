@@ -42,13 +42,6 @@ export default function RootLayout() {
         />
 
         <Stack.Screen
-          name="(tabs)"
-          options={{
-            headerShown: false,
-          }}
-        />
-
-        <Stack.Screen
           name="getVerified"
           options={{
             headerShown: true,
@@ -60,11 +53,18 @@ export default function RootLayout() {
             headerTransparent: true,
           }}
         />
-
-
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            headerShown: false,
+          }}
+        />
         
         <Stack.Screen name="details/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="apply/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="employer/applicant-detail/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="employer/applicants-detail/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="employer/jobList/[id]" options={{ headerShown: false }} />
       </Stack>
       </ApplicationsProvider>
     </AuthProvider>
