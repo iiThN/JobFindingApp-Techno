@@ -1,20 +1,21 @@
-import React, { useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  ScrollView,
-  Alert,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
+import {
+  Alert,
+  FlatList,
+  Modal,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { TopNav } from "../../../components/Navigations";
-import { initialJobList } from "../../../data/employer_data/employer_data";
 import styles from "../../../components/stylesIn";
+import { initialJobList } from "../../../data/employer_data/employer_data";
+import { supabase } from "../../../lib/supabase";
 
 const SUGGESTED_SKILLS = [
   "React Native", "React.js", "Node.js", "TypeScript", "JavaScript",
@@ -30,6 +31,78 @@ export default function EmployerJobsScreen() {
   const [jobs, setJobs] = useState([...initialJobList]);
   const [searchQuery, setSearchQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
+
+  
+  const handlePostJob = async () => {
+    try {
+      // Check logged-in user
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        Alert.alert("Login Required", "Please log in first.");
+        return;
+      }
+
+      // Get employer verification status
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("role, verification_status")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (profile.role !== "Employer") {
+        Alert.alert(
+          "Access Denied",
+          "Only employers can post jobs."
+        );
+        return;
+      }
+
+      switch (profile.verification_status) {
+        case "Verified":
+          setModalVisible(true);
+          break;
+
+        case "Pending":
+          Alert.alert(
+            "Verification Pending",
+            "Your employer verification is still under review."
+          );
+          break;
+
+        case "Rejected":
+        case "Not Submitted":
+          Alert.alert(
+            "Verification Required",
+            "You must verify your employer account before posting jobs.",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Get Verified",
+                onPress: () => router.push("/getVerified"),
+              },
+            ]
+          );
+          break;
+
+        default:
+          Alert.alert(
+            "Verification Required",
+            "Your verification status could not be confirmed."
+          );
+      }
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error.message || "Unable to check verification status."
+      );
+    }
+  };
 
   // Create Form State
   const [title, setTitle] = useState("");
@@ -141,7 +214,10 @@ export default function EmployerJobsScreen() {
           <Text style={styles.employerHeaderTitle}>My Job Postings</Text>
           <Text style={styles.employerHeaderSubtitle}>Manage and review active vacancies</Text>
         </View>
-        <TouchableOpacity style={styles.employerPostBtn} onPress={() => setModalVisible(true)}>
+        <TouchableOpacity
+            style={styles.employerPostBtn}
+            onPress={handlePostJob}
+          >
           <Ionicons name="add" size={18} color="#FFF" />
           <Text style={styles.employerPostBtnText}>Post Job</Text>
         </TouchableOpacity>
