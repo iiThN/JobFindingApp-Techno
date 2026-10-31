@@ -30,7 +30,7 @@ export default function Register() {
   const { register } = useAuth();
   const isIntentionalNavigation = useRef(false);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     const validationError = validateRegister(
       name,
       email,
@@ -45,20 +45,26 @@ export default function Register() {
 
     setError("");
 
-    if (role === "Job Seeker") {
-      const result = register({
-        name,
-        email,
-        password,
-        role,
-      });
+    
+  if (role === "Job Seeker") {
+    const result = await register({
+      name,
+      email,
+      password,
+      role,
+    });
 
-      if (!result.success) {
-        setError(result.message);
-        return;
-      }
+    if (!result.success) {
+      setError(result.message);
+      return;
+    }
 
-      Alert.alert("Success", "Registration successful!", [
+    Alert.alert(
+      "Registration Successful",
+      result.requiresConfirmation
+        ? "Please check your email to verify your account before logging in."
+        : "Your account has been created successfully.",
+      [
         {
           text: "OK",
           onPress: () => {
@@ -66,8 +72,10 @@ export default function Register() {
             router.replace("/login");
           },
         },
-      ]);
-    }
+      ]
+    );
+  }
+
 
     if (role === "Employer") {
       isIntentionalNavigation.current = true;

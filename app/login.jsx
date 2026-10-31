@@ -26,7 +26,8 @@ export default function Login() {
 
   const { login } = useAuth();
 
-  const handleLogin = () => {
+  
+  const handleLogin = async () => {
     const validationError = validateLogin(email, password);
 
     if (validationError) {
@@ -34,7 +35,7 @@ export default function Login() {
       return;
     }
 
-    const result = login(email, password);
+    const result = await login(email, password);
 
     if (!result.success) {
       setError(result.message);
@@ -45,16 +46,17 @@ export default function Login() {
     setEmail("");
     setPassword("");
 
-    
     Alert.alert("Success", "Login successful!", [
       {
         text: "OK",
         onPress: () => {
-          const role = String(result.user?.role || "").toLowerCase();
+          const role = String(
+            result.user?.role || ""
+          ).toLowerCase();
 
           if (role === "admin") {
             router.replace("/(tabs)/(admin)/dashboard");
-          } else if (role.includes("employer")) {
+          } else if (role === "employer") {
             router.replace("/(tabs)/(employer)/dashboard");
           } else {
             router.replace("/(tabs)/(jobseeker)");
@@ -63,6 +65,7 @@ export default function Login() {
       },
     ]);
   };
+
 
 
   return (
