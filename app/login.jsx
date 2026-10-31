@@ -9,8 +9,8 @@ import {
   View
 } from "react-native";
 
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 import FormButton from "../components/Button";
 import InputField from "../components/InputField";
 import styles from "../components/styles";
@@ -19,14 +19,17 @@ import { useAuth } from "../context/AuthContext";
 import { validateLogin } from "../validations/authValidation";
 
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { login } = useAuth();
 
   
   const handleLogin = async () => {
+    if (isLoggingIn) return;
+
     const validationError = validateLogin(email, password);
 
     if (validationError) {
@@ -34,23 +37,30 @@ export default function Login() {
       return;
     }
 
-    const result = await login(email, password);
-
-    if (!result.success) {
-      setError(result.message);
-      return;
-    }
-
+    setIsLoggingIn(true);
     setError("");
 
-    const role = String(result.user?.role || "").toLowerCase();
+    try {
+      const result = await login(email, password);
 
-    if (role === "admin") {
-      router.replace("/(tabs)/(admin)/dashboard");
-    } else if (role === "employer") {
-      router.replace("/(tabs)/(employer)/dashboard");
-    } else {
-      router.replace("/(tabs)/(jobseeker)");
+      if (!result.success) {
+        setError(result.message);
+        return;
+      }
+
+      const role = String(result.user?.role || "").toLowerCase();
+
+      if (role === "admin") {
+        router.replace("/(tabs)/(admin)/dashboard");
+      } else if (role === "employer") {
+        router.replace("/(tabs)/(employer)/dashboard");
+      } else {
+        router.replace("/(tabs)/(jobseeker)");
+      }
+    } catch (error) {
+      setError(error.message || "Login failed. Please try again.");
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -120,8 +130,9 @@ export default function Login() {
               )}
 
               <FormButton
-                btnTitle="Login"
+                btnTitle={isLoggingIn ? "Logging in..." : "Login"}
                 onPress={handleLogin}
+                disabled={isLoggingIn}
               />
             </View>
 

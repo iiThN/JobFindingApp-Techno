@@ -5,7 +5,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { AppState } from "react-native";
+import { Alert, AppState } from "react-native";
 import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
@@ -44,7 +44,13 @@ export function AuthProvider({ children }) {
         if (session?.user) {
           const profile = await loadProfile(session.user.id);
 
-          if (active) setCurrentUser(profile);
+          if (profile.status === "suspended") {
+            await supabase.auth.signOut();
+
+            if (active) setCurrentUser(null);
+          } else {
+            if (active) setCurrentUser(profile);
+          }
         }
       } catch (error) {
         console.log("Session error:", error.message);
@@ -55,21 +61,45 @@ export function AuthProvider({ children }) {
 
     restoreSession();
 
-    // Listen for login/logout changes
+    // Listen for logout changes
     const { data: listener } = supabase.auth.onAuthStateChange(
       (event) => {
-        if (event === "SIGNED_OUT") {
+        if (event === "SIGNED_OUT" && active) {
           setCurrentUser(null);
         }
       }
     );
 
-    // Refresh tokens while app is active
+    // Refresh account status when returning to app
     const appState = AppState.addEventListener(
       "change",
-      (state) => {
+      async (state) => {
         if (state === "active") {
           supabase.auth.startAutoRefresh();
+
+          try {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+
+            if (session?.user) {
+              const profile = await loadProfile(session.user.id);
+
+              if (!active) return;
+
+              if (profile.status === "suspended") {
+                setCurrentUser(null);
+                await supabase.auth.signOut();
+              } else {
+                setCurrentUser(profile);
+              }
+            }
+          } catch (error) {
+            console.log(
+              "Profile refresh error:",
+              error.message
+            );
+          }
         } else {
           supabase.auth.stopAutoRefresh();
         }
@@ -82,6 +112,62 @@ export function AuthProvider({ children }) {
       appState.remove();
     };
   }, []);
+
+  // Listen for account suspension in real time
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    const userId = currentUser.id;
+
+    const channel = supabase
+      .channel(`account-status-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${userId}`,
+        },
+        async (payload) => {
+            if (payload.new.status === "suspended") {
+              console.log("Account suspended. Signing out.");
+
+              setCurrentUser(null);
+
+              const { error } = await supabase.auth.signOut();
+
+              if (error) {
+                console.log("Sign out error:", error.message);
+              }
+
+              Alert.alert(
+                "Account Suspended",
+                "Your account has been suspended by an administrator. Please contact support if you believe this is a mistake.",
+                [{ text: "OK" }]
+              );
+            }
+         else {
+            // Update profile when account details change
+            setCurrentUser((previous) => {
+              if (!previous || previous.id !== userId) {
+                return previous;
+              }
+
+              return {
+                ...previous,
+                ...payload.new,
+              };
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser?.id]);
 
   // Register account
   const register = async (account) => {
@@ -152,10 +238,14 @@ export function AuthProvider({ children }) {
     const { error } = await supabase.auth.signOut();
 
     if (error) {
-      return { success: false, message: error.message };
+      return {
+        success: false,
+        message: error.message,
+      };
     }
 
     setCurrentUser(null);
+
     return { success: true };
   };
 
