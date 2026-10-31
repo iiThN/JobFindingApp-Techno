@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Modal,
@@ -14,7 +15,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TopNav } from "../../../components/Navigations";
 import styles from "../../../components/stylesIn";
-import { initialJobList } from "../../../data/employer_data/employer_data";
 import { supabase } from "../../../lib/supabase";
 
 const SUGGESTED_SKILLS = [
@@ -28,7 +28,9 @@ const SUGGESTED_REQUIREMENTS = [
 ];
 
 export default function EmployerJobsScreen() {
-  const [jobs, setJobs] = useState([...initialJobList]);
+  const [jobs, setJobs] = useState([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -106,6 +108,7 @@ export default function EmployerJobsScreen() {
 
   // Create Form State
   const [title, setTitle] = useState("");
+  const [location, setLocation] = useState("");
   const [position, setPosition] = useState("Full-Time");
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
@@ -120,11 +123,52 @@ export default function EmployerJobsScreen() {
   const [skillInput, setSkillInput] = useState("");
   const [selectedSkills, setSelectedSkills] = useState([]);
 
-  useFocusEffect(
-    useCallback(() => {
-      setJobs([...initialJobList]);
-    }, [])
-  );
+  // Reload this employer's jobs when screen is focused
+  const loadJobs = async () => {
+    setLoadingJobs(true);
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user) {
+        setJobs([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("employer_id", user.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+
+      const { data: verification, error: verificationError } = await supabase
+        .from("employer_verifications")
+        .select("company_name")
+        .eq("employer_id", user.id)
+        .eq("status", "Verified")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (verificationError) throw verificationError;
+
+      setJobs((data || []).map((job) => ({
+        ...job,
+        position: job.job_type,
+        companyName: verification?.company_name || "My Company",
+        applicantsCount: 0, // Will be connected to applications later
+        skillRequirements: job.skills || "",
+        status: job.status.toLowerCase(),
+      })));
+    } catch (error) {
+      Alert.alert("Error", error.message || "Unable to load jobs.");
+    } finally {
+      setLoadingJobs(false);
+    }
+  };
+
+  useFocusEffect(useCallback(() => {
+    loadJobs();
+  }, []));
 
   const filteredJobs = jobs.filter(
     (job) =>
@@ -156,40 +200,60 @@ export default function EmployerJobsScreen() {
     setSelectedSkills(selectedSkills.filter((s) => s !== skillToRemove));
   };
 
-  const handleCreateJob = () => {
-    if (!title || !salaryMin || !salaryMax) {
-      Alert.alert("Missing Fields", "Please fill in the Job Title and Salary range.");
+  const handleCreateJob = async () => {
+    if (publishing) return;
+
+    if (!title.trim() || !location.trim() || !description.trim() ||
+        !salaryMin.trim() || !salaryMax.trim()) {
+      Alert.alert("Missing Fields", "Fill in the title, location, description and salary range.");
       return;
     }
 
-    const formattedSalary = `$${salaryMin} - $${salaryMax} / ${salaryInterval}`;
+    const min = Number(salaryMin);
+    const max = Number(salaryMax);
+    if (!Number.isFinite(min) || !Number.isFinite(max) || min < 0 || max < min) {
+      Alert.alert("Invalid Salary", "Enter a valid minimum and maximum salary.");
+      return;
+    }
 
-    const newJob = {
-      id: Date.now().toString(),
-      title,
-      position,
-      companyName: "BrioSoft Solutions",
-      salary: formattedSalary,
-      status: "open",
-      applicantsCount: 0,
-      description,
-      requirements: selectedRequirements.join(", "),
-      skillRequirements: selectedSkills.join(", "),
-    };
+    setPublishing(true);
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user) throw new Error("Please log in first.");
 
-    initialJobList.unshift(newJob);
-    setJobs([...initialJobList]);
+      const { error } = await supabase.from("jobs").insert({
+        employer_id: user.id,
+        title: title.trim(),
+        description: description.trim(),
+        location: location.trim(),
+        job_type: position,
+        salary: `$${salaryMin} - $${salaryMax} / ${salaryInterval}`,
+        requirements: selectedRequirements.join(", "),
+        skills: selectedSkills.join(", "),
+        status: "Open",
+      });
+      if (error) throw error;
 
-    // Reset Form
-    setModalVisible(false);
-    setTitle("");
-    setSalaryMin("");
-    setSalaryMax("");
-    setDescription("");
-    setSelectedRequirements([]);
-    setSelectedSkills([]);
-    
-    Alert.alert("Success", "New job position published successfully!");
+      setModalVisible(false);
+      setTitle("");
+      setLocation("");
+      setPosition("Full-Time");
+      setSalaryMin("");
+      setSalaryMax("");
+      setSalaryInterval("mo");
+      setDescription("");
+      setReqInput("");
+      setSkillInput("");
+      setSelectedRequirements([]);
+      setSelectedSkills([]);
+      await loadJobs();
+      Alert.alert("Success", "New job position published successfully!");
+    } catch (error) {
+      Alert.alert("Unable to Publish", error.message || "Please try again.");
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const matchingReqSuggestions = reqInput.trim().length > 0
@@ -245,6 +309,8 @@ export default function EmployerJobsScreen() {
       {/* Job List Feed */}
       <FlatList
         data={filteredJobs}
+        refreshing={loadingJobs}
+        onRefresh={loadJobs}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 30 }}
         showsVerticalScrollIndicator={false}
@@ -330,6 +396,15 @@ export default function EmployerJobsScreen() {
               placeholderTextColor="#94A3B8" 
               value={title} 
               onChangeText={setTitle} 
+            />
+
+            <Text style={styles.employerLabel}>Job Location</Text>
+            <TextInput
+              style={styles.employerInput}
+              placeholder="e.g. Cagayan de Oro / Remote"
+              placeholderTextColor="#94A3B8"
+              value={location}
+              onChangeText={setLocation}
             />
 
             <Text style={styles.employerLabel}>Employment Type</Text>
@@ -476,8 +551,12 @@ export default function EmployerJobsScreen() {
 
           {/* Sticky Bottom Action Footer */}
           <View style={styles.detailsFooter}>
-            <TouchableOpacity style={styles.detailsApply} onPress={handleCreateJob} activeOpacity={0.85}>
-              <Text style={styles.detailsApplyText}>Publish Job Listing</Text>
+            <TouchableOpacity style={styles.detailsApply} onPress={handleCreateJob} disabled={publishing} activeOpacity={0.85}>
+              {publishing ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.detailsApplyText}>Publish Job Listing</Text>
+              )}
             </TouchableOpacity>
           </View>
 

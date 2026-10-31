@@ -1,44 +1,156 @@
-import React, { useState } from "react";
+
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
+  ActivityIndicator,
   FlatList,
-  TouchableOpacity,
+  StyleSheet,
+  Text,
   TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, Feather } from "@expo/vector-icons";
-import { router } from "expo-router";
+
 import { TopNav } from "../../../components/Navigations";
-// Import both initialApplicants and initialJobList to look up job titles
-import { initialApplicants, initialJobList } from "../../../data/employer_data/employer_data";
+import { useAuth } from "../../../context/AuthContext";
+import { supabase } from "../../../lib/supabase";
 
 export default function EmployerApplicantsScreen() {
+  const { currentUser } = useAuth();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
-  const [applicants] = useState(initialApplicants);
+  const [applicants, setApplicants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  // Helper function to find the job title based on jobId
-  const getJobTitle = (jobId) => {
-    const matchedJob = initialJobList.find((job) => job.id === jobId);
-    return matchedJob ? matchedJob.title : "General Application";
-  };
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
 
-  // Filter applicants based on search query, ID, or job title match
+      const loadApplicants = async () => {
+        setLoading(true);
+        setLoadError("");
+
+        try {
+          const {
+            data: { user },
+            error: authError,
+          } = await supabase.auth.getUser();
+
+          if (authError) throw authError;
+
+          if (!user?.id) {
+            throw new Error("Please log in again.");
+          }
+
+          // Kuhaon ang jobs sa logged-in employer.
+          const { data: jobs, error: jobsError } =
+            await supabase
+              .from("jobs")
+              .select("id, title")
+              .eq("employer_id", user.id);
+
+          if (jobsError) throw jobsError;
+
+          const jobList = jobs || [];
+          const jobIds = jobList.map((job) => job.id);
+
+          if (jobIds.length === 0) {
+            if (active) setApplicants([]);
+            return;
+          }
+
+          // Kuhaon ang applications sa employer jobs.
+          const { data, error } = await supabase
+            .from("applications")
+            .select(`
+              id,
+              job_id,
+              applicant_id,
+              full_name,
+              email,
+              note,
+              attachment_paths,
+              status,
+              created_at
+            `)
+            .in("job_id", jobIds)
+            .order("created_at", { ascending: false });
+
+          console.log("Employer applications:", data);
+          console.log("Employer applications error:", error);
+
+          if (error) throw error;
+
+          const mapped = (data || []).map((item) => {
+            const job = jobList.find(
+              (job) => job.id === item.job_id
+            );
+
+            return {
+              id: item.id,
+              jobId: item.job_id,
+              applicantID: item.applicant_id,
+              applicantName: item.full_name,
+              email: item.email,
+              application_message: item.note || "",
+              attachmentPaths: item.attachment_paths || [],
+              status: item.status,
+              date_applied: new Date(
+                item.created_at
+              ).toLocaleDateString("en-PH", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              }),
+              jobTitle: job?.title || "Job unavailable",
+            };
+          });
+
+          if (active) setApplicants(mapped);
+        } catch (error) {
+          console.log("Load applicants error:", error);
+
+          if (active) {
+            setApplicants([]);
+            setLoadError(
+              error.message || "Failed to load applicants."
+            );
+          }
+        } finally {
+          if (active) setLoading(false);
+        }
+      };
+
+      loadApplicants();
+
+      return () => {
+        active = false;
+      };
+    }, [currentUser?.id])
+  );
+
   const filteredApplicants = applicants.filter((item) => {
-    const jobTitle = getJobTitle(item.jobId).toLowerCase();
+    const search = searchQuery.toLowerCase();
+
     const matchesSearch =
-      item.applicantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.applicantID.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      jobTitle.includes(searchQuery.toLowerCase());
+      item.applicantName.toLowerCase().includes(search) ||
+      item.applicantID.toLowerCase().includes(search) ||
+      item.jobTitle.toLowerCase().includes(search);
 
     if (selectedFilter === "all") return matchesSearch;
-    return matchesSearch && item.status === selectedFilter;
+
+    return (
+      matchesSearch &&
+      item.status.toLowerCase() === selectedFilter
+    );
   });
 
   const getStatusBadgeStyle = (status) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "accepted":
         return styles.acceptedBadge;
       case "rejected":
@@ -49,7 +161,7 @@ export default function EmployerApplicantsScreen() {
   };
 
   const getStatusTextStyle = (status) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "accepted":
         return styles.acceptedText;
       case "rejected":
@@ -63,7 +175,6 @@ export default function EmployerApplicantsScreen() {
     <SafeAreaView style={styles.container}>
       <TopNav />
 
-      {/* Header Section */}
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>Applicants</Text>
@@ -71,15 +182,22 @@ export default function EmployerApplicantsScreen() {
             Manage candidates and incoming submissions
           </Text>
         </View>
+
         <View style={styles.countBadge}>
-          <Text style={styles.countText}>{filteredApplicants.length}</Text>
+          <Text style={styles.countText}>
+            {filteredApplicants.length}
+          </Text>
         </View>
       </View>
 
-      {/* Search & Filter Controls */}
       <View style={styles.controlsSection}>
         <View style={styles.searchBarContainer}>
-          <Ionicons name="search-outline" size={20} color="#8993A8" />
+          <Ionicons
+            name="search-outline"
+            size={20}
+            color="#8993A8"
+          />
+
           <TextInput
             style={styles.searchInput}
             placeholder="Search candidate, ID, or job title..."
@@ -87,39 +205,51 @@ export default function EmployerApplicantsScreen() {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <Ionicons name="close-circle" size={18} color="#8993A8" />
+            <TouchableOpacity
+              onPress={() => setSearchQuery("")}
+            >
+              <Ionicons
+                name="close-circle"
+                size={18}
+                color="#8993A8"
+              />
             </TouchableOpacity>
           )}
         </View>
 
-        {/* Filter Chips */}
         <View style={styles.filterChipRow}>
-          {["all", "pending", "accepted", "rejected"].map((filter) => {
-            const isActive = selectedFilter === filter;
-            return (
-              <TouchableOpacity
-                key={filter}
-                style={[styles.filterChip, isActive && styles.activeFilterChip]}
-                onPress={() => setSelectedFilter(filter)}
-                activeOpacity={0.7}
-              >
-                <Text
+          {["all", "pending", "accepted", "rejected"].map(
+            (filter) => {
+              const isActive = selectedFilter === filter;
+
+              return (
+                <TouchableOpacity
+                  key={filter}
                   style={[
-                    styles.filterChipText,
-                    isActive && styles.activeFilterChipText,
+                    styles.filterChip,
+                    isActive && styles.activeFilterChip,
                   ]}
+                  onPress={() => setSelectedFilter(filter)}
+                  activeOpacity={0.7}
                 >
-                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      isActive && styles.activeFilterChipText,
+                    ]}
+                  >
+                    {filter.charAt(0).toUpperCase() +
+                      filter.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }
+          )}
         </View>
       </View>
 
-      {/* Applicants List */}
       <FlatList
         data={filteredApplicants}
         keyExtractor={(item) => item.id}
@@ -127,90 +257,164 @@ export default function EmployerApplicantsScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Ionicons name="folder-open-outline" size={56} color="#CBD5E1" />
-            <Text style={styles.emptyTitle}>No Applicants Found</Text>
-            <Text style={styles.emptySubtitle}>
-              Try adjusting your search query or status filter.
-            </Text>
+            {loading ? (
+              <>
+                <ActivityIndicator
+                  size="large"
+                  color="#2623D3"
+                />
+                <Text style={styles.emptySubtitle}>
+                  Loading applicants...
+                </Text>
+              </>
+            ) : loadError ? (
+              <>
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={48}
+                  color="#B91C1C"
+                />
+                <Text style={styles.emptyTitle}>
+                  Unable to load applicants
+                </Text>
+                <Text style={styles.emptySubtitle}>
+                  {loadError}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Ionicons
+                  name="folder-open-outline"
+                  size={56}
+                  color="#CBD5E1"
+                />
+                <Text style={styles.emptyTitle}>
+                  No Applicants Found
+                </Text>
+                <Text style={styles.emptySubtitle}>
+                  {applicants.length === 0
+                    ? "Applications to your jobs will appear here."
+                    : "Try adjusting your search query or status filter."}
+                </Text>
+              </>
+            )}
           </View>
         }
-        renderItem={({ item }) => {
-          const appliedJobTitle = getJobTitle(item.jobId);
-
-          return (
-            <TouchableOpacity
-              style={styles.candidateCard}
-              activeOpacity={0.85}
-              onPress={() =>
-                router.push(`/employer/applicant-detail/${item.id}`)
-              }
-            >
-              {/* Card Header: Avatar, Info, Status */}
-              <View style={styles.cardHeader}>
-                <View style={styles.avatarWrapper}>
-                  <Text style={styles.avatarInitial}>
-                    {item.applicantName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </Text>
-                </View>
-
-                <View style={styles.candidateMeta}>
-                  <Text style={styles.candidateName}>{item.applicantName}</Text>
-                  
-                  {/* Applied Job Pill Tag */}
-                  <View style={styles.appliedJobTag}>
-                    <BriefcaseIcon />
-                    <Text style={styles.appliedJobText} numberOfLines={1}>
-                      {appliedJobTitle}
-                    </Text>
-                  </View>
-
-                  <Text style={styles.candidateSubDetail}>
-                    ID: {item.applicantID} • Applied {item.date_applied}
-                  </Text>
-                </View>
-
-                <View style={[styles.badge, getStatusBadgeStyle(item.status)]}>
-                  <Text style={[styles.badgeText, getStatusTextStyle(item.status)]}>
-                    {item.status.toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Message Body Preview */}
-              <View style={styles.messageBubble}>
-                <Text numberOfLines={2} style={styles.messageContent}>
-                  "{item.application_message}"
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.candidateCard}
+            activeOpacity={0.85}
+            onPress={() =>
+              router.push(
+                `/employer/applicant-detail/${item.id}`
+              )
+            }
+          >
+            <View style={styles.cardHeader}>
+              <View style={styles.avatarWrapper}>
+                <Text style={styles.avatarInitial}>
+                  {item.applicantName
+                    .split(" ")
+                    .filter(Boolean)
+                    .map((name) => name[0])
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase()}
                 </Text>
               </View>
 
-              {/* Card Footer */}
-              <View style={styles.cardFooter}>
-                <View style={styles.attachmentPill}>
-                  <Feather name="paperclip" size={13} color="#2623D3" />
-                  <Text style={styles.attachmentText} numberOfLines={1}>
-                    {item.attached_files}
+              <View style={styles.candidateMeta}>
+                <Text style={styles.candidateName}>
+                  {item.applicantName}
+                </Text>
+
+                <View style={styles.appliedJobTag}>
+                  <BriefcaseIcon />
+                  <Text
+                    style={styles.appliedJobText}
+                    numberOfLines={1}
+                  >
+                    {item.jobTitle}
                   </Text>
                 </View>
 
-                <View style={styles.actionPrompt}>
-                  <Text style={styles.actionText}>Review</Text>
-                  <Ionicons name="arrow-forward" size={14} color="#2623D3" />
-                </View>
+                <Text style={styles.candidateSubDetail}>
+                  ID: {item.applicantID.slice(0, 8)} • Applied{" "}
+                  {item.date_applied}
+                </Text>
               </View>
-            </TouchableOpacity>
-          );
-        }}
+
+              <View
+                style={[
+                  styles.badge,
+                  getStatusBadgeStyle(item.status),
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.badgeText,
+                    getStatusTextStyle(item.status),
+                  ]}
+                >
+                  {item.status.toUpperCase()}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.messageBubble}>
+              <Text
+                numberOfLines={2}
+                style={styles.messageContent}
+              >
+                {item.application_message
+                  ? `"${item.application_message}"`
+                  : "No application message provided."}
+              </Text>
+            </View>
+
+            <View style={styles.cardFooter}>
+              <View style={styles.attachmentPill}>
+                <Feather
+                  name="paperclip"
+                  size={13}
+                  color="#2623D3"
+                />
+                <Text
+                  style={styles.attachmentText}
+                  numberOfLines={1}
+                >
+                  {item.attachmentPaths.length}{" "}
+                  {item.attachmentPaths.length === 1
+                    ? "attachment"
+                    : "attachments"}
+                </Text>
+              </View>
+
+              <View style={styles.actionPrompt}>
+                <Text style={styles.actionText}>
+                  Review
+                </Text>
+                <Ionicons
+                  name="arrow-forward"
+                  size={14}
+                  color="#2623D3"
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
       />
     </SafeAreaView>
   );
 }
 
-// Small icon helper for the job tag
 const BriefcaseIcon = () => (
-  <Ionicons name="briefcase-outline" size={12} color="#2623D3" style={{ marginRight: 4 }} />
+  <Ionicons
+    name="briefcase-outline"
+    size={12}
+    color="#2623D3"
+    style={{ marginRight: 4 }}
+  />
 );
 
 const styles = StyleSheet.create({

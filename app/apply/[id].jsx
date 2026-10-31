@@ -2,8 +2,9 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -18,23 +19,38 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useApplications } from "../../context/ApplicationsContext";
 import { useAuth } from "../../context/AuthContext";
-import jobs from "../../data/jobseeker_data/jobs";
+import { supabase } from "../../lib/supabase";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_FILES = 10;
-const ALLOWED_EXTENSIONS = ["pdf", "doc", "docx", "jpg", "jpeg", "png"];
+
+const ALLOWED_EXTENSIONS = [
+  "pdf",
+  "doc",
+  "docx",
+  "jpg",
+  "jpeg",
+  "png",
+];
 
 const formatSize = (size) =>
-  size == null ? "Unknown size" : `${(size / 1024 / 1024).toFixed(2)} MB`;
+  size == null
+    ? "Unknown size"
+    : `${(size / 1024 / 1024).toFixed(2)} MB`;
 
 export default function ApplyForJob() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { currentUser } = useAuth();
-  const { hasApplied, applyToJob } = useApplications();
 
-  const job = jobs.find((item) => String(item.id) === String(id));
+  const { currentUser } = useAuth();
+  const { hasApplied, refreshApplications } = useApplications();
+
+  const [job, setJob] = useState(null);
+  const [loadingJob, setLoadingJob] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [alreadyApplied, setAlreadyApplied] = useState(false);
+  const [checkingApplication, setCheckingApplication] = useState(true);
 
   const [fullName, setFullName] = useState(currentUser?.name || "");
   const [email, setEmail] = useState(currentUser?.email || "");
@@ -42,9 +58,96 @@ export default function ApplyForJob() {
   const [note, setNote] = useState("");
   const [errors, setErrors] = useState({});
 
-  const clearError = (key) =>
-    setErrors((prev) => ({ ...prev, [key]: undefined }));
+  const clearError = (key) => {
+    setErrors((previous) => ({
+      ...previous,
+      [key]: undefined,
+    }));
+  };
 
+  // Kuhaon ang job gikan sa Supabase.
+  useEffect(() => {
+    let active = true;
+
+    const loadJob = async () => {
+      setLoadingJob(true);
+
+      const { data, error } = await supabase
+        .from("jobs")
+        .select(`
+          id,
+          title,
+          employer_id,
+          status,
+          profiles:employer_id (
+            name
+          )
+        `)
+        .eq("id", id)
+        .eq("status", "Open")
+        .maybeSingle();
+
+      if (!active) return;
+
+      if (error) {
+        console.log("Job error:", error.message);
+        setJob(null);
+      } else {
+        setJob(data);
+      }
+
+      setLoadingJob(false);
+    };
+
+    if (id) {
+      loadJob();
+    } else {
+      setLoadingJob(false);
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  // I-check kung naka-apply na ang user.
+  useEffect(() => {
+    let active = true;
+
+    const checkApplication = async () => {
+      setCheckingApplication(true);
+
+      if (!currentUser?.id || !id) {
+        if (active) setCheckingApplication(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("applications")
+        .select("id")
+        .eq("job_id", id)
+        .eq("applicant_id", currentUser.id)
+        .maybeSingle();
+
+      if (!active) return;
+
+      if (error) {
+        console.log("Application check error:", error.message);
+      } else {
+        setAlreadyApplied(!!data);
+      }
+
+      setCheckingApplication(false);
+    };
+
+    checkApplication();
+
+    return () => {
+      active = false;
+    };
+  }, [id, currentUser?.id]);
+
+  // Pili og attachments.
   const pickAttachments = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -65,10 +168,15 @@ export default function ApplyForJob() {
       const rejected = [];
 
       for (const file of result.assets) {
-        const extension = file.name?.split(".").pop()?.toLowerCase();
+        const extension = file.name
+          ?.split(".")
+          .pop()
+          ?.toLowerCase();
 
         const duplicate = next.some(
-          (item) => item.name === file.name && item.size === file.size
+          (item) =>
+            item.name === file.name &&
+            item.size === file.size
         );
 
         if (!ALLOWED_EXTENSIONS.includes(extension)) {
@@ -93,14 +201,21 @@ export default function ApplyForJob() {
 
       setAttachments(next);
 
-      if (next.length > 0) clearError("attachments");
+      if (next.length > 0) {
+        clearError("attachments");
+      }
 
       if (rejected.length > 0) {
-        Alert.alert("Some files were not added", rejected.join("\n"));
+        Alert.alert(
+          "Some files were not added",
+          rejected.join("\n")
+        );
       }
-    } catch {
+    } catch (error) {
+      console.log("Document picker error:", error);
+
       Alert.alert(
-        "Attachment failed",
+        "Attachment Failed",
         "We couldn't open those files. Please try again."
       );
     }
@@ -112,7 +227,38 @@ export default function ApplyForJob() {
     );
   };
 
-  const handleSubmit = () => {
+  // Basahon ang file gamit ang URI.
+  const readAttachment = async (attachment) => {
+    try {
+      const response = await fetch(attachment.uri);
+
+      if (!response.ok) {
+        throw new Error("Unable to read selected file.");
+      }
+
+      const fileData = await response.arrayBuffer();
+
+      if (!fileData || fileData.byteLength === 0) {
+        throw new Error("Selected file is empty.");
+      }
+
+      if (fileData.byteLength > MAX_FILE_SIZE) {
+        throw new Error("File exceeds the 10 MB limit.");
+      }
+
+      return fileData;
+    } catch (error) {
+      console.log("File read error:", error);
+
+      throw new Error(
+        `Cannot read "${attachment.name}". Please select the file again.`
+      );
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (submitting || checkingApplication) return;
+
     const nextErrors = {};
 
     if (!fullName.trim()) {
@@ -131,102 +277,284 @@ export default function ApplyForJob() {
 
     setErrors(nextErrors);
 
-    if (nextErrors.attachments) {
-      Alert.alert("Attachment required", nextErrors.attachments);
-    }
-
-    if (Object.keys(nextErrors).length > 0) return;
-
-    const result = applyToJob(job.id, {
-      fullName: fullName.trim(),
-      email: email.trim(),
-      attachments,
-      note: note.trim(),
-    });
-
-    if (!result.success) {
-      Alert.alert("Already applied", result.message);
+    if (Object.keys(nextErrors).length > 0) {
+      Alert.alert(
+        "Validation Error",
+        "Please check your information."
+      );
       return;
     }
 
-    Alert.alert(
-      "Application sent",
-      "You can track it in the Applications tab.",
-      [
-        { text: "Stay here", onPress: () => router.back() },
-        {
-          text: "View applications",
-          onPress: () => router.navigate("/jobApps"),
-        },
-      ]
-    );
+    if (!currentUser?.id || !job?.id) {
+      Alert.alert(
+        "Error",
+        "Please log in and select a valid job."
+      );
+      return;
+    }
+
+    if (alreadyApplied || hasApplied(job.id)) {
+      Alert.alert(
+        "Already Applied",
+        "You already applied to this job."
+      );
+      return;
+    }
+
+    setSubmitting(true);
+
+    const uploadedPaths = [];
+    let applicationSaved = false;
+    let insertAttempted = false;
+
+    try {
+      // Siguraduhon nga open pa ang job.
+      const { data: openJob, error: jobError } = await supabase
+        .from("jobs")
+        .select("id")
+        .eq("id", job.id)
+        .eq("status", "Open")
+        .maybeSingle();
+
+      if (jobError) throw jobError;
+
+      if (!openJob) {
+        throw new Error(
+          "This job is no longer accepting applications."
+        );
+      }
+
+      // I-check usab kung naka-apply na.
+      const { data: existing, error: checkError } = await supabase
+        .from("applications")
+        .select("id")
+        .eq("job_id", job.id)
+        .eq("applicant_id", currentUser.id)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existing) {
+        setAlreadyApplied(true);
+        throw new Error("You already applied to this job.");
+      }
+
+      // I-upload ang attachments sa private bucket.
+      for (const attachment of attachments) {
+        const fileData = await readAttachment(attachment);
+
+        const extension = attachment.name
+          .split(".")
+          .pop()
+          .toLowerCase();
+
+        const fileName =
+          `${Date.now()}-${Math.random()
+            .toString(36)
+            .slice(2)}.${extension}`;
+
+        const path =
+          `${currentUser.id}/${job.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("application-documents")
+          .upload(path, fileData, {
+            contentType:
+              attachment.mimeType || "application/octet-stream",
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        uploadedPaths.push(path);
+      }
+
+      // I-save ang application sa database.
+      insertAttempted = true;
+
+      const { error: insertError } = await supabase
+        .from("applications")
+        .insert({
+          job_id: job.id,
+          applicant_id: currentUser.id,
+          full_name: fullName.trim(),
+          email: email.trim(),
+          note: note.trim(),
+          attachment_paths: uploadedPaths,
+        });
+
+      if (insertError) throw insertError;
+
+      applicationSaved = true;
+      setAlreadyApplied(true);
+
+      try {
+        await refreshApplications();
+      } catch (refreshError) {
+        console.log("Refresh error:", refreshError);
+      }
+
+      Alert.alert(
+        "Application Sent",
+        "You can track your application in the Applications tab.",
+        [
+          {
+            text: "View Applications",
+            onPress: () => router.replace("/jobApps"),
+          },
+        ]
+      );
+    } catch (error) {
+      console.log("Application error:", error);
+
+      // Limpyo lang kung wala pa gisulayan ang DB insert.
+      // Dili tangtangon ang files kung posible nga na-save na.
+      if (
+        !applicationSaved &&
+        !insertAttempted &&
+        uploadedPaths.length > 0
+      ) {
+        const { error: cleanupError } =
+          await supabase.storage
+            .from("application-documents")
+            .remove(uploadedPaths);
+
+        if (cleanupError) {
+          console.log(
+            "Cleanup error:",
+            cleanupError.message
+          );
+        }
+      }
+
+      const duplicate = error.code === "23505";
+
+      if (duplicate) {
+        setAlreadyApplied(true);
+      }
+
+      Alert.alert(
+        duplicate ? "Already Applied" : "Submission Failed",
+        duplicate
+          ? "You already submitted an application for this job."
+          : error.message || "Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const alreadyApplied = job ? hasApplied(job.id) : false;
+  const applied = alreadyApplied || (job ? hasApplied(job.id) : false);
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+    <SafeAreaView
+      style={styles.container}
+      edges={["top", "bottom"]}
+    >
       <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => router.back()}
         >
-          <Feather name="arrow-left" size={22} color="#14204A" />
+          <Feather
+            name="arrow-left"
+            size={22}
+            color="#14204A"
+          />
         </TouchableOpacity>
 
-        <Text style={styles.topTitle}>Apply for Job</Text>
+        <Text style={styles.topTitle}>
+          Apply for Job
+        </Text>
+
         <View style={{ width: 42 }} />
       </View>
 
-      {!job ? (
+      {loadingJob ? (
+        <ActivityIndicator
+          size="large"
+          color="#2623D3"
+          style={{ marginTop: 40 }}
+        />
+      ) : !job ? (
         <View style={styles.center}>
-          <Text style={styles.jobTitle}>Job not found</Text>
+          <Text style={styles.jobTitle}>
+            Job not found
+          </Text>
         </View>
       ) : (
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={
+            Platform.OS === "ios"
+              ? "padding"
+              : undefined
+          }
         >
           <ScrollView
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.jobTitle} numberOfLines={1}>
+            <Text
+              style={styles.jobTitle}
+              numberOfLines={1}
+            >
               {job.title}
             </Text>
-            <Text style={styles.jobCompany}>{job.company}</Text>
 
-            <Text style={styles.label}>Full Name</Text>
+            <Text style={styles.jobCompany}>
+              {job.profiles?.name || "Employer"}
+            </Text>
+
+            <Text style={styles.label}>
+              Full Name
+            </Text>
+
             <TextInput
-              style={[styles.input, errors.fullName && styles.inputError]}
+              style={[
+                styles.input,
+                errors.fullName && styles.inputError,
+              ]}
               placeholder="John Doe"
               placeholderTextColor="#9AA1B2"
               value={fullName}
-              onChangeText={(t) => {
-                setFullName(t);
+              onChangeText={(text) => {
+                setFullName(text);
                 clearError("fullName");
               }}
             />
+
             {!!errors.fullName && (
-              <Text style={styles.error}>{errors.fullName}</Text>
+              <Text style={styles.error}>
+                {errors.fullName}
+              </Text>
             )}
 
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>
+              Email
+            </Text>
+
             <TextInput
-              style={[styles.input, errors.email && styles.inputError]}
+              style={[
+                styles.input,
+                errors.email && styles.inputError,
+              ]}
               placeholder="example@gmail.com"
               placeholderTextColor="#9AA1B2"
               value={email}
               keyboardType="email-address"
               autoCapitalize="none"
-              onChangeText={(t) => {
-                setEmail(t);
+              onChangeText={(text) => {
+                setEmail(text);
                 clearError("email");
               }}
             />
+
             {!!errors.email && (
-              <Text style={styles.error}>{errors.email}</Text>
+              <Text style={styles.error}>
+                {errors.email}
+              </Text>
             )}
 
             <Text style={styles.label}>
@@ -245,13 +573,14 @@ export default function ApplyForJob() {
               ]}
               activeOpacity={0.8}
               onPress={pickAttachments}
-              disabled={attachments.length >= MAX_FILES}
+              disabled={attachments.length >= MAX_FILES || submitting}
             >
               <MaterialCommunityIcons
                 name="file-plus-outline"
                 size={34}
                 color="#2623D3"
               />
+
               <Text style={styles.uploadText}>
                 {attachments.length >= MAX_FILES
                   ? "Maximum attachments reached"
@@ -260,11 +589,16 @@ export default function ApplyForJob() {
             </TouchableOpacity>
 
             {!!errors.attachments && (
-              <Text style={styles.error}>{errors.attachments}</Text>
+              <Text style={styles.error}>
+                {errors.attachments}
+              </Text>
             )}
 
             {attachments.map((file) => (
-              <View key={file.uri} style={styles.fileRow}>
+              <View
+                key={file.uri}
+                style={styles.fileRow}
+              >
                 <Feather
                   name="file-text"
                   size={20}
@@ -272,27 +606,44 @@ export default function ApplyForJob() {
                 />
 
                 <View style={styles.fileInfo}>
-                  <Text style={styles.fileName} numberOfLines={1}>
+                  <Text
+                    style={styles.fileName}
+                    numberOfLines={1}
+                  >
                     {file.name}
                   </Text>
+
                   <Text style={styles.fileSize}>
                     {formatSize(file.size)}
                   </Text>
                 </View>
 
                 <TouchableOpacity
-                  onPress={() => removeAttachment(file.uri)}
+                  onPress={() =>
+                    removeAttachment(file.uri)
+                  }
+                  disabled={submitting}
                   accessibilityLabel={`Remove ${file.name}`}
                   style={styles.removeButton}
                 >
-                  <Feather name="x" size={20} color="#B42318" />
+                  <Feather
+                    name="x"
+                    size={20}
+                    color="#B42318"
+                  />
                 </TouchableOpacity>
               </View>
             ))}
 
-            <Text style={styles.label}>Add Text</Text>
+            <Text style={styles.label}>
+              Add Text
+            </Text>
+
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[
+                styles.input,
+                styles.textArea,
+              ]}
               placeholder="Write Something here.."
               placeholderTextColor="#9AA1B2"
               value={note}
@@ -306,14 +657,24 @@ export default function ApplyForJob() {
             <TouchableOpacity
               style={[
                 styles.submit,
-                alreadyApplied && { backgroundColor: "#A1AAC0" },
+                (applied || submitting || checkingApplication) && {
+                  backgroundColor: "#A1AAC0",
+                },
               ]}
               activeOpacity={0.8}
-              disabled={alreadyApplied}
+              disabled={
+                applied || submitting || checkingApplication
+              }
               onPress={handleSubmit}
             >
               <Text style={styles.submitText}>
-                {alreadyApplied ? "Applied" : "Submit"}
+                {submitting
+                  ? "Submitting..."
+                  : checkingApplication
+                    ? "Checking..."
+                    : applied
+                      ? "Applied"
+                      : "Submit"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -324,7 +685,10 @@ export default function ApplyForJob() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFFFFF" },
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -384,8 +748,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "transparent",
   },
-  inputError: { borderColor: "#B42318" },
-  textArea: { height: 180, paddingTop: 14 },
+  inputError: {
+    borderColor: "#B42318",
+  },
+  textArea: {
+    height: 180,
+    paddingTop: 14,
+  },
   upload: {
     height: 100,
     backgroundColor: "#F5F5F5",
@@ -416,7 +785,9 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 8,
   },
-  fileInfo: { flex: 1 },
+  fileInfo: {
+    flex: 1,
+  },
   fileName: {
     fontSize: 12,
     fontWeight: "600",
@@ -427,7 +798,9 @@ const styles = StyleSheet.create({
     color: "#8993A8",
     marginTop: 3,
   },
-  removeButton: { padding: 6 },
+  removeButton: {
+    padding: 6,
+  },
   error: {
     fontSize: 12,
     color: "#B42318",

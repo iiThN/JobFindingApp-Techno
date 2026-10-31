@@ -1,6 +1,9 @@
-import { Feather, MaterialCommunityIcons, } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter, } from "expo-router";
+
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   StatusBar,
   Text,
@@ -9,9 +12,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import jobs from "../../data/jobseeker_data/jobs";
 import styles from "../../components/stylesIn";
 import { useApplications } from "../../context/ApplicationsContext";
+import { supabase } from "../../lib/supabase";
 
 export default function JobDetails() {
   const { id } = useLocalSearchParams();
@@ -20,13 +23,69 @@ export default function JobDetails() {
   const { hasApplied } = useApplications();
   const applied = hasApplied(id);
 
-  // Apply Now -> buksan ang "Apply for Job" form.
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // Kuhaon ang job details gamit ang UUID.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      const fetchJob = async () => {
+        setLoading(true);
+        setErrorMessage("");
+
+        const { data, error } = await supabase
+          .from("jobs")
+          .select(`
+            *,
+            profiles:employer_id (
+              name
+            )
+          `)
+          .eq("id", id)
+          .maybeSingle();
+
+        if (!active) return;
+
+        if (error) {
+          setErrorMessage(error.message);
+          setJob(null);
+        } else {
+          setJob(data);
+        }
+
+        setLoading(false);
+      };
+
+      if (id) {
+        fetchJob();
+      } else {
+        setJob(null);
+        setLoading(false);
+      }
+
+      return () => {
+        active = false;
+      };
+    }, [id])
+  );
+
   const handleApply = () => {
-    router.push({ pathname: "/apply/[id]", params: { id: String(id) } });
+    router.push({
+      pathname: "/apply/[id]",
+      params: { id: String(id) },
+    });
   };
 
-  // gamit ang ID sa pagsearch sa jobs nga idisplay.
-  const job = jobs.find((item) => String(item.id) === String(id));
+  const requirements = job?.requirements
+    ? job.requirements.split(/,|\n/).map((r) => r.trim()).filter(Boolean)
+    : [];
+
+  const skills = job?.skills
+    ? job.skills.split(/,|\n/).map((s) => s.trim()).filter(Boolean)
+    : [];
 
   return (
     <SafeAreaView
@@ -61,14 +120,20 @@ export default function JobDetails() {
           <View style={{ width: 42 }} />
         </View>
 
-        {!job ? (
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#2623D3"
+            style={{ marginTop: 40 }}
+          />
+        ) : !job ? (
           <View style={styles.detailsPanel}>
             <Text style={styles.detailsTitle}>
               Job not found
             </Text>
 
             <Text style={styles.detailsBody}>
-              No job matches ID: {String(id)}
+              {errorMessage || "This job is unavailable."}
             </Text>
           </View>
         ) : (
@@ -77,11 +142,11 @@ export default function JobDetails() {
               <View
                 style={[
                   styles.detailsLogo,
-                  { backgroundColor: job.color },
+                  { backgroundColor: "#E9ECFF" },
                 ]}
               >
                 <MaterialCommunityIcons
-                  name={job.icon}
+                  name="briefcase-outline"
                   size={36}
                   color="#2623D3"
                 />
@@ -92,7 +157,7 @@ export default function JobDetails() {
               </Text>
 
               <Text style={styles.detailsCompany}>
-                {job.company}
+                {job.profiles?.name || "Employer"}
               </Text>
 
               <View style={styles.detailsLocation}>
@@ -108,38 +173,11 @@ export default function JobDetails() {
               </View>
             </View>
 
-            {/* details sa trabaho. */}
             <View style={styles.detailsFacts}>
               <View style={styles.detailsFact}>
-                <Feather
-                  name="hash"
-                  size={19}
-                  color="#2623D3"
-                />
-
-                <Text style={styles.detailsFactLabel}>
-                  Job ID
-                </Text>
-
-                <Text style={styles.detailsFactValue}>
-                  {job.id}
-                </Text>
-              </View>
-
-              <View style={styles.detailsFact}>
-                <Feather
-                  name="briefcase"
-                  size={19}
-                  color="#2623D3"
-                />
-
-                <Text style={styles.detailsFactLabel}>
-                  Job Type
-                </Text>
-
-                <Text style={styles.detailsFactValue}>
-                  {job.type}
-                </Text>
+                <Feather name="briefcase" size={19} color="#2623D3" />
+                <Text style={styles.detailsFactLabel}>Employment Type</Text>
+                <Text style={styles.detailsFactValue}>{job.job_type}</Text>
               </View>
             </View>
 
@@ -149,7 +187,7 @@ export default function JobDetails() {
               </Text>
 
               <Text style={styles.detailsSalary}>
-                {job.salary}
+                {job.salary || "Not specified"}
               </Text>
             </View>
 
@@ -168,23 +206,53 @@ export default function JobDetails() {
                 Requirements
               </Text>
 
-              {job.requirements.map((requirement, index) => (
-                <Text
-                  key={index}
-                  style={styles.detailsRequirement}
-                >
-                  {"•  "}{requirement}
+              {requirements.length > 0 ? (
+                requirements.map((requirement, index) => (
+                  <Text
+                    key={index}
+                    style={styles.detailsRequirement}
+                  >
+                    {"•  "}{requirement}
+                  </Text>
+                ))
+              ) : (
+                <Text style={styles.detailsBody}>
+                  No requirements specified.
                 </Text>
-              ))}
+              )}
+            </View>
+
+            <View style={styles.detailsPanel}>
+              <Text style={styles.detailsSectionTitle}>
+                Key Skills
+              </Text>
+
+              {skills.length > 0 ? (
+                skills.map((skill, index) => (
+                  <Text
+                    key={index}
+                    style={styles.detailsRequirement}
+                  >
+                    {"•  "}{skill}
+                  </Text>
+                ))
+              ) : (
+                <Text style={styles.detailsBody}>
+                  No skills specified.
+                </Text>
+              )}
             </View>
           </>
         )}
       </ScrollView>
 
-      {job && (
+      {job?.status === "Open" && (
         <View style={styles.detailsFooter}>
           <TouchableOpacity
-            style={[styles.detailsApply, applied && { backgroundColor: "#A1AAC0" }]}
+            style={[
+              styles.detailsApply,
+              applied && { backgroundColor: "#A1AAC0" },
+            ]}
             activeOpacity={0.8}
             disabled={applied}
             onPress={handleApply}
