@@ -306,7 +306,7 @@ export default function JobDetailScreen() {
       </ScrollView>
 
       <View style={styles.detailsFooter}>
-        <TouchableOpacity style={styles.detailsApply} activeOpacity={0.85} onPress={() => router.push("/employer/applicants")}>
+        <TouchableOpacity style={styles.detailsApply} activeOpacity={0.85} onPress={() => router.push("/(tabs)/(employer)/applicants")}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10 }}>
             <Ionicons name="people" size={18} color="#FFF" />
             <Text style={styles.detailsApplyText}>View Applicants</Text>
