@@ -1,39 +1,110 @@
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "./AuthContext";
 
 const ApplicationsContext = createContext(null);
 
 export function ApplicationsProvider({ children }) {
+  const { currentUser } = useAuth();
   const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const hasApplied = (jobId) =>
-    applications.some((item) => item.jobId === String(jobId));
-
-  const applyToJob = (jobId, details = {}) => {
-    if (hasApplied(jobId)) {
-      return {
-        success: false,
-        message: "You already applied to this job.",
-      };
+  const refreshApplications = async () => {
+    if (!currentUser?.id) {
+      setApplications([]);
+      return;
     }
 
-    setApplications((previous) => [
-      {
-        jobId: String(jobId),
-        status: "Pending",
-        appliedAt: new Date().toISOString(),
-        // Application details apil ang multiple attachments
-        details,
-      },
-      ...previous,
-    ]);
+    setLoading(true);
 
-    return { success: true };
+    const { data, error } = await supabase
+      .from("applications")
+      .select("*")
+      .eq("applicant_id", currentUser.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+    } else {
+      setApplications(
+        (data || []).map((item) => ({
+          id: item.id,
+          jobId: item.job_id,
+          status: item.status,
+          appliedAt: item.created_at,
+          details: {
+            fullName: item.full_name,
+            email: item.email,
+            note: item.note,
+            attachmentPaths: item.attachment_paths,
+          },
+        }))
+      );
+    }
+
+    setLoading(false);
   };
+
+  useEffect(() => {
+    let active = true;
+
+    const load = async () => {
+      if (!currentUser?.id) {
+        setApplications([]);
+        return;
+      }
+
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("applications")
+        .select("*")
+        .eq("applicant_id", currentUser.id)
+        .order("created_at", { ascending: false });
+
+      if (!active) return;
+
+      if (error) {
+      } else {
+        setApplications(
+          (data || []).map((item) => ({
+            id: item.id,
+            jobId: item.job_id,
+            status: item.status,
+            appliedAt: item.created_at,
+            details: {
+              fullName: item.full_name,
+              email: item.email,
+              note: item.note,
+              attachmentPaths: item.attachment_paths,
+            },
+          }))
+        );
+      }
+
+      setLoading(false);
+    };
+
+    load();
+
+    return () => {
+      active = false;
+    };
+  }, [currentUser?.id]);
+
+  const hasApplied = (jobId) =>
+    applications.some(
+      (item) => String(item.jobId) === String(jobId)
+    );
 
   return (
     <ApplicationsContext.Provider
-      value={{ applications, hasApplied, applyToJob }}
+      value={{
+        applications,
+        hasApplied,
+        refreshApplications,
+        loading,
+      }}
     >
       {children}
     </ApplicationsContext.Provider>

@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -26,11 +27,18 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const { register } = useAuth();
   const isIntentionalNavigation = useRef(false);
 
-  const handleRegister = () => {
+  const selectedRole = role === "Employer"
+    ? "Employer"
+    : "Job Seeker";
+
+  const handleRegister = async () => {
+    if (submitting) return;
+
     const validationError = validateRegister(
       name,
       email,
@@ -44,13 +52,14 @@ export default function Register() {
     }
 
     setError("");
+    setSubmitting(true);
 
-    if (role === "Job Seeker") {
-      const result = register({
-        name,
-        email,
+    try {
+      const result = await register({
+        name: name.trim(),
+        email: email.trim(),
         password,
-        role,
+        role: selectedRole,
       });
 
       if (!result.success) {
@@ -58,65 +67,65 @@ export default function Register() {
         return;
       }
 
-      Alert.alert("Success", "Registration successful!", [
-        {
-          text: "OK",
-          onPress: () => {
-            isIntentionalNavigation.current = true;
-            router.replace("/login");
-          },
-        },
-      ]);
-    }
-
-    if (role === "Employer") {
-      isIntentionalNavigation.current = true;
-
-      router.push({
-        pathname: "/getVerified",
-        params: {
-          role,
-          name,
-          email,
-          password,
-        },
-      });
-    }
-  };
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
-      if (isIntentionalNavigation.current) {
-        return;
-      }
-
-      e.preventDefault();
-
       Alert.alert(
-        "Stop creating account?",
-        "If you stop now you'll lose any progress you've made.",
+        "Registration Successful",
+        result.requiresConfirmation
+          ? "Please verify your email before logging in."
+          : "Your account has been created. You can now log in.",
         [
           {
-            text: "Continue creating account",
-            style: "cancel",
-          },
-          {
-            text: "Stop creating account",
-            style: "destructive",
+            text: "OK",
             onPress: () => {
-              navigation.dispatch(e.data.action);
+              isIntentionalNavigation.current = true;
+              router.replace("/login");
             },
           },
         ]
       );
-    });
+    } catch (err) {
+      setError(err.message || "Registration failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener(
+      "beforeRemove",
+      (e) => {
+        if (isIntentionalNavigation.current) return;
+
+        e.preventDefault();
+
+        Alert.alert(
+          "Stop creating account?",
+          "If you stop now, you'll lose your progress.",
+          [
+            {
+              text: "Continue creating account",
+              style: "cancel",
+            },
+            {
+              text: "Stop creating account",
+              style: "destructive",
+              onPress: () => {
+                navigation.dispatch(e.data.action);
+              },
+            },
+          ]
+        );
+      }
+    );
 
     return unsubscribe;
   }, [navigation]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        behavior="padding"
+        style={{ flex: 1 }}
+      >
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
@@ -126,9 +135,9 @@ export default function Register() {
         >
           <View style={styles.card}>
             <Text style={styles.title}>
-              {role === "Job Seeker"
-                ? "Join as a Job Seeker"
-                : "Join as an Employer"}
+              {selectedRole === "Employer"
+                ? "Join as an Employer"
+                : "Join as a Job Seeker"}
             </Text>
 
             <Text style={styles.subtitle}>
@@ -179,12 +188,14 @@ export default function Register() {
               />
 
               {error !== "" && (
-                <Text style={styles.errorText}>{error}</Text>
+                <Text style={styles.errorText}>
+                  {error}
+                </Text>
               )}
 
               <FormButton
                 btnTitle={
-                  role === "Employer" ? "Get Verified" : "Register"
+                  submitting ? "Registering..." : "Register"
                 }
                 onPress={handleRegister}
               />

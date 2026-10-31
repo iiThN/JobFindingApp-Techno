@@ -1,11 +1,35 @@
 
-import { Stack, router } from "expo-router";
-import { TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Stack, router, useRouter, useSegments } from "expo-router";
+import { useEffect } from "react";
+import { StyleSheet, TouchableOpacity } from "react-native";
 import "react-native-gesture-handler";
 
 import { ApplicationsProvider } from "../context/ApplicationsContext";
-import { AuthProvider } from "../context/AuthContext";
+import { AuthProvider, useAuth } from "../context/AuthContext";
+
+function AuthGuard() {
+  const { currentUser, loading } = useAuth();
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (loading) return;
+
+    const isProtectedRoute =
+      segments[0] === "(tabs)" ||
+      segments[0] === "details" ||
+      segments[0] === "apply" ||
+      segments[0] === "employer" ||
+      segments[0] === "getVerified";
+
+    if (!currentUser && isProtectedRoute) {
+      router.replace("/login");
+    }
+  }, [currentUser, loading, segments, router]);
+
+  return null;
+}
 
 export default function RootLayout() {
   // Custom back button for employer screens
@@ -22,6 +46,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ApplicationsProvider>
+        <AuthGuard />
         <Stack
           screenOptions={{
             statusBarStyle: "dark",

@@ -1,51 +1,180 @@
+
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export const STATUS = {
-  Pending:   { bg: "#FFF3CF", fg: "#7A4E00", bar: "#B7791F", steps: 1, note: "Waiting for review" },
-  Rejected:  { bg: "#FDE8E8", fg: "#B42318", bar: "#B42318", steps: 2, note: "Not selected this time" },
+  Pending: {
+    bg: "#FFF3CF",
+    fg: "#7A4E00",
+    bar: "#B7791F",
+    steps: 1,
+    note: "Waiting for review",
+  },
+  Accepted: {
+    bg: "#DCFCE7",
+    fg: "#166534",
+    bar: "#16A34A",
+    steps: 4,
+    note: "Application accepted",
+  },
+  Rejected: {
+    bg: "#FDE8E8",
+    fg: "#B42318",
+    bar: "#B42318",
+    steps: 2,
+    note: "Not selected this time",
+  },
 };
 
-export default function ApplicationCard({ job, application, onPress }) {
-  const s = STATUS[application.status];
-  const date = new Date(application.appliedAt).toLocaleDateString("en-PH", {
+export default function ApplicationCard({
+  job,
+  application,
+  onPress,
+}) {
+  const [showReply, setShowReply] = useState(false);
+
+  const s = STATUS[application.status] || STATUS.Pending;
+
+  const date = new Date(
+    application.appliedAt
+  ).toLocaleDateString("en-PH", {
     month: "short",
     day: "numeric",
   });
 
-  return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-      <View style={styles.top}>
-        <View style={[styles.iconBox, { backgroundColor: job.color }]}>
-          <MaterialCommunityIcons name={job.icon} size={25} color="#2623D3" />
-        </View>
+  const hasReply = !!application.replyMessage?.trim();
 
-        <View style={styles.info}>
-          <Text style={styles.title} numberOfLines={2}>{job.title}</Text>
-          <Text style={styles.company} numberOfLines={1}>
-            {job.company} · {job.location}
+  return (
+    <View style={styles.card}>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.8}
+      >
+        <View style={styles.top}>
+          <View
+            style={[
+              styles.iconBox,
+              {
+                backgroundColor: job.color || "#E9ECFF",
+              },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name={job.icon || "briefcase-outline"}
+              size={25}
+              color="#2623D3"
+            />
+          </View>
+
+          <View style={styles.info}>
+            <Text
+              style={styles.title}
+              numberOfLines={2}
+            >
+              {job.title}
+            </Text>
+
+            <Text
+              style={styles.company}
+              numberOfLines={1}
+            >
+              {job.company} · {job.location}
+            </Text>
+          </View>
+
+          <Text
+            style={[
+              styles.pill,
+              {
+                backgroundColor: s.bg,
+                color: s.fg,
+              },
+            ]}
+          >
+            {application.status}
           </Text>
         </View>
 
-        <Text style={[styles.pill, { backgroundColor: s.bg, color: s.fg }]}>
-          {application.status}
-        </Text>
-      </View>
+        <View style={styles.bars}>
+          {[0, 1, 2, 3].map((i) => (
+            <View
+              key={i}
+              style={[
+                styles.bar,
+                {
+                  backgroundColor:
+                    i < s.steps ? s.bar : "#E1E5F2",
+                },
+              ]}
+            />
+          ))}
+        </View>
 
-      <View style={styles.bars}>
-        {[0, 1, 2, 3].map((i) => (
-          <View
-            key={i}
-            style={[styles.bar, { backgroundColor: i < s.steps ? s.bar : "#E1E5F2" }]}
-          />
-        ))}
-      </View>
+        <View style={styles.bottom}>
+          <Text style={styles.note}>
+            {s.note} · Applied {date}
+          </Text>
 
-      <View style={styles.bottom}>
-        <Text style={styles.note}>{s.note} · Applied {date}</Text>
-        <Text style={styles.view}>View</Text>
-      </View>
-    </TouchableOpacity>
+          <Text style={styles.view}>
+            View
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      {hasReply && (
+        <>
+          <View style={styles.divider} />
+
+          <TouchableOpacity
+            style={styles.replyButton}
+            onPress={() => setShowReply(!showReply)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.replyButtonLeft}>
+              <MaterialCommunityIcons
+                name="message-text-outline"
+                size={18}
+                color="#2623D3"
+              />
+
+              <Text style={styles.replyButtonText}>
+                {showReply
+                  ? "Hide Employer Reply"
+                  : "View Employer Reply"}
+              </Text>
+            </View>
+
+            <MaterialCommunityIcons
+              name={
+                showReply
+                  ? "chevron-up"
+                  : "chevron-down"
+              }
+              size={20}
+              color="#2623D3"
+            />
+          </TouchableOpacity>
+
+          {showReply && (
+            <View style={styles.replyBox}>
+              <Text style={styles.replyLabel}>
+                Message from Employer
+              </Text>
+
+              <Text style={styles.replyMessage}>
+                {application.replyMessage}
+              </Text>
+            </View>
+          )}
+        </>
+      )}
+    </View>
   );
 }
 
@@ -59,15 +188,98 @@ const styles = StyleSheet.create({
     borderColor: "#EDF0F7",
     gap: 12,
   },
-  top: { flexDirection: "row", alignItems: "center", gap: 12 },
-  iconBox: { width: 50, height: 50, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  info: { flex: 1 },
-  title: { fontSize: 14, fontWeight: "700", color: "#121B39" },
-  company: { fontSize: 12, color: "#5B6788", marginTop: 4 },
-  pill: { fontSize: 11, fontWeight: "700", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, overflow: "hidden" },
-  bars: { flexDirection: "row", gap: 5 },
-  bar: { flex: 1, height: 5, borderRadius: 3 },
-  bottom: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  note: { flex: 1, fontSize: 12, color: "#5B6788" },
-  view: { fontSize: 12, fontWeight: "700", color: "#2623D3" },
+  top: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  iconBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  info: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#121B39",
+  },
+  company: {
+    fontSize: 12,
+    color: "#5B6788",
+    marginTop: 4,
+  },
+  pill: {
+    fontSize: 11,
+    fontWeight: "700",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  bars: {
+    flexDirection: "row",
+    gap: 5,
+    marginTop: 12,
+  },
+  bar: {
+    flex: 1,
+    height: 5,
+    borderRadius: 3,
+  },
+  bottom: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 12,
+  },
+  note: {
+    flex: 1,
+    fontSize: 12,
+    color: "#5B6788",
+  },
+  view: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#2623D3",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#EDF0F7",
+  },
+  replyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  replyButtonLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  replyButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#2623D3",
+  },
+  replyBox: {
+    backgroundColor: "#F6F8FF",
+    borderRadius: 12,
+    padding: 12,
+  },
+  replyLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#111C4B",
+    marginBottom: 6,
+  },
+  replyMessage: {
+    fontSize: 13,
+    color: "#4B5563",
+    lineHeight: 20,
+  },
 });

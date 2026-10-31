@@ -1,260 +1,259 @@
 
-import { createContext, useContext, useState } from "react";
-import { ADMIN_ROLE, BUILT_IN_ADMINS } from "../data/admins";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { Alert, AppState } from "react-native";
+import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
 
-const isEmployerRole = (role) =>
-  String(role || "").toLowerCase().includes("employer");
-
-// Remove password from session data
-const toSessionUser = ({ password, ...account }) => account;
-
 export function AuthProvider({ children }) {
-  // Built-in Admin accounts
-  const [accounts, setAccounts] = useState(BUILT_IN_ADMINS);
   const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Register Job Seeker or Employer
-  const register = (account) => {
-    const normalizedEmail = account.email.trim().toLowerCase();
+  // Get profile from database
+  const loadProfile = async (userId) => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
 
-    const alreadyExists = accounts.some(
-      (item) =>
-        item.email.toLowerCase() === normalizedEmail
-    );
-
-    if (alreadyExists) {
-      return {
-        success: false,
-        message: "An account with this email already exists.",
-      };
-    }
-
-    // Prevent public Admin registration
-    if (
-      String(account.role || "").toLowerCase() ===
-      ADMIN_ROLE.toLowerCase()
-    ) {
-      return {
-        success: false,
-        message: "This role is not available for registration.",
-      };
-    }
-
-    const employer = isEmployerRole(account.role);
-
-    const newAccount = {
-      ...account,
-      email: normalizedEmail,
-      savedJobs: account.savedJobs || [],
-      skills: account.skills || [],
-      status: "active",
-      createdAt: new Date().toISOString(),
-
-      ...(employer && {
-        verificationPending: true,
-        verificationStatus: "Pending",
-        verificationSubmittedAt: new Date().toISOString(),
-      }),
-    };
-
-    setAccounts((previousAccounts) => [
-      ...previousAccounts,
-      newAccount,
-    ]);
-
-    return { success: true };
-  };
-
-  // Login
-  const login = (email, password) => {
-    const account = accounts.find(
-      (item) =>
-        item.email.toLowerCase() ===
-          email.trim().toLowerCase() &&
-        item.password === password
-    );
-
-    if (!account) {
-      return {
-        success: false,
-        message:
-          "Incorrect email or password, or this account is not registered.",
-
-      };
-    }
-
-    // Block suspended accounts
-    if (account.status === "suspended") {
-      return {
-        success: false,
-        message:
-          "This account has been suspended. Please contact an administrator.",
-      };
-    }
-
-    const sessionUser = {
-      ...toSessionUser(account),
-      savedJobs: account.savedJobs || [],
-      skills: account.skills || [],
-    };
-
-    setCurrentUser(sessionUser);
+    if (error) throw error;
 
     return {
-      success: true,
-      user: sessionUser,
+      ...data,
+      savedJobs: [],
+      skills: [],
     };
   };
 
-  // Logout
-  const logout = () => {
-    setCurrentUser(null);
-  };
+  useEffect(() => {
+    let active = true;
 
-  // Check Admin permission
-  const requireAdmin = () =>
-    currentUser?.role === ADMIN_ROLE
-      ? null
-      : {
-          success: false,
-          message: "Only administrators can do this.",
-        };
+    // Restore existing login session
+    const restoreSession = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-  // Admin: Suspend or reactivate user
-  const setAccountStatus = (email, status) => {
-    const denied = requireAdmin();
-    if (denied) return denied;
+        if (session?.user) {
+          const profile = await loadProfile(session.user.id);
 
-    const target = accounts.find(
-      (item) => item.email === email
+          if (profile.status === "suspended") {
+            await supabase.auth.signOut();
+
+            if (active) setCurrentUser(null);
+          } else {
+            if (active) setCurrentUser(profile);
+          }
+        }
+      } catch (error) {
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    restoreSession();
+
+    // Listen for logout changes
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (event) => {
+        if (event === "SIGNED_OUT" && active) {
+          setCurrentUser(null);
+        }
+      }
     );
 
-    if (!target || target.role === ADMIN_ROLE) {
-      return {
-        success: false,
-        message: "This account can't be changed.",
-      };
-    }
+    // Refresh account status when returning to app
+    const appState = AppState.addEventListener(
+      "change",
+      async (state) => {
+        if (state === "active") {
+          supabase.auth.startAutoRefresh();
 
-    setAccounts((previous) =>
-      previous.map((item) =>
-        item.email === email
-          ? { ...item, status }
-          : item
-      )
-    );
+          try {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
 
-    return { success: true };
-  };
+            if (session?.user) {
+              const profile = await loadProfile(session.user.id);
 
-  // Admin: Delete user
-  const deleteAccount = (email) => {
-    const denied = requireAdmin();
-    if (denied) return denied;
+              if (!active) return;
 
-    const target = accounts.find(
-      (item) => item.email === email
-    );
-
-    if (!target || target.role === ADMIN_ROLE) {
-      return {
-        success: false,
-        message: "This account can't be deleted.",
-      };
-    }
-
-    setAccounts((previous) =>
-      previous.filter((item) => item.email !== email)
-    );
-
-    return { success: true };
-  };
-
-
-
-  // Update current user's profile
-  const updateCurrentUser = (updates) => {
-    setCurrentUser((previousUser) => {
-      if (!previousUser) return previousUser;
-
-      const updatedUser = {
-        ...previousUser,
-        ...updates,
-      };
-
-      const previousEmail = previousUser.email
-        ?.trim()
-        .toLowerCase();
-
-      setAccounts((previousAccounts) =>
-        previousAccounts.map((account) =>
-          account.email?.trim().toLowerCase() === previousEmail
-            ? { ...account, ...updates }
-            : account
-        )
-      );
-
-      return updatedUser;
-    });
-  };
-
-  // Admin: Verify or reject employer
-  const reviewEmployer = (email, decision, remarks = "") => {
-    const denied = requireAdmin();
-    if (denied) return denied;
-
-    const target = accounts.find(
-      (item) => item.email === email
-    );
-
-    if (!target || !isEmployerRole(target.role)) {
-      return {
-        success: false,
-        message: "Employer not found.",
-      };
-    }
-
-    if (!["Verified", "Rejected"].includes(decision)) {
-      return {
-        success: false,
-        message: "Invalid verification decision.",
-      };
-    }
-
-    setAccounts((previous) =>
-      previous.map((item) =>
-        item.email === email
-          ? {
-              ...item,
-              verificationPending: false,
-              verificationStatus: decision,
-              verificationRemarks: remarks,
-              reviewedBy: currentUser.email,
-              reviewedByName: currentUser.name,
-              reviewedAt: new Date().toISOString(),
+              if (profile.status === "suspended") {
+                setCurrentUser(null);
+                await supabase.auth.signOut();
+              } else {
+                setCurrentUser(profile);
+              }
             }
-          : item
-      )
+          } catch (error) {
+            console.log(
+              "Profile refresh error:",
+              error.message
+            );
+          }
+        } else {
+          supabase.auth.stopAutoRefresh();
+        }
+      }
     );
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+      appState.remove();
+    };
+  }, []);
+
+  // Listen for account suspension in real time
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    const userId = currentUser.id;
+
+    const channel = supabase
+      .channel(`account-status-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${userId}`,
+        },
+        async (payload) => {
+            if (payload.new.status === "suspended") {
+
+              setCurrentUser(null);
+
+              const { error } = await supabase.auth.signOut();
+
+              if (error) {
+              }
+
+              Alert.alert(
+                "Account Suspended",
+                "Your account has been suspended by an administrator. Please contact support if you believe this is a mistake.",
+                [{ text: "OK" }]
+              );
+            }
+         else {
+            // Update profile when account details change
+            setCurrentUser((previous) => {
+              if (!previous || previous.id !== userId) {
+                return previous;
+              }
+
+              return {
+                ...previous,
+                ...payload.new,
+              };
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser?.id]);
+
+  // Register account
+  const register = async (account) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: account.email.trim().toLowerCase(),
+        password: account.password,
+        options: {
+          data: {
+            name: account.name,
+            role: account.role,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        requiresConfirmation: !data.session,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  // Login account
+  const login = async (email, password) => {
+    try {
+      const { data, error } =
+        await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        });
+
+      if (error) throw error;
+
+      const profile = await loadProfile(data.user.id);
+
+      if (profile.status === "suspended") {
+        await supabase.auth.signOut();
+
+        return {
+          success: false,
+          message: "Your account has been suspended.",
+        };
+      }
+
+      setCurrentUser(profile);
+
+      return {
+        success: true,
+        user: profile,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  // Logout account
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+
+    setCurrentUser(null);
 
     return { success: true };
   };
-
 
   return (
     <AuthContext.Provider
       value={{
-        accounts,
         currentUser,
+        loading,
         register,
         login,
-        updateCurrentUser,
         logout,
-        setAccountStatus,
-        deleteAccount,
-        reviewEmployer,
       }}
     >
       {children}
@@ -266,9 +265,7 @@ export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error(
-      "useAuth must be used inside AuthProvider."
-    );
+    throw new Error("useAuth must be used inside AuthProvider.");
   }
 
   return context;

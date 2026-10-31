@@ -1,12 +1,20 @@
+
 import { Feather } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TopNav } from "../../../components/Navigations";
 import adminStyles from "../../../components/adminStyles";
 import { useAuth } from "../../../context/AuthContext";
-
-const isEmployer = (account) => String(account.role || "").toLowerCase().includes("employer");
+import { supabase } from "../../../lib/supabase";
 
 function Stat({ icon, value, label, tint }) {
   return (
@@ -21,24 +29,87 @@ function Stat({ icon, value, label, tint }) {
 }
 
 export default function AdminDashboard() {
-  const { currentUser, accounts } = useAuth();
+  const { currentUser } = useAuth();
+  const [stats, setStats] = useState({
+    users: 0,
+    employers: 0,
+    seekers: 0,
+    pending: 0,
+    verified: 0,
+    rejected: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const members = accounts.filter((a) => a.role !== "Admin");
-  const employers = members.filter(isEmployer);
-  const seekers = members.filter((a) => !isEmployer(a));
-  const pending = employers.filter((e) => e.verificationStatus === "Pending");
+  const loadStats = async () => {
+    setLoading(true);
+    setErrorMessage("");
 
-  // Each admin sees their own review activity.
-  const mine = employers.filter((e) => e.reviewedBy === currentUser?.email);
-  const myVerified = mine.filter((e) => e.verificationStatus === "Verified").length;
-  const myRejected = mine.filter((e) => e.verificationStatus === "Rejected").length;
+    try {
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, role");
+
+      if (profilesError) throw profilesError;
+
+      const { data: requests, error: requestsError } = await supabase
+        .from("employer_verifications")
+        .select("status, reviewed_by");
+
+      if (requestsError) throw requestsError;
+
+      const members = (profiles || []).filter(
+        (user) => String(user.role).toLowerCase() !== "admin"
+      );
+
+      const employers = members.filter(
+        (user) => String(user.role).toLowerCase() === "employer"
+      );
+
+      const seekers = members.filter(
+        (user) => String(user.role).toLowerCase() === "job seeker"
+      );
+
+      const mine = (requests || []).filter(
+        (request) => request.reviewed_by === currentUser?.id
+      );
+
+      setStats({
+        users: members.length,
+        employers: employers.length,
+        seekers: seekers.length,
+        pending: (requests || []).filter(
+          (request) => request.status === "Pending"
+        ).length,
+        verified: mine.filter(
+          (request) => request.status === "Verified"
+        ).length,
+        rejected: mine.filter(
+          (request) => request.status === "Rejected"
+        ).length,
+      });
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadStats();
+    }, [currentUser?.id])
+  );
 
   const firstName = currentUser?.name?.split(" ")[0] || "Admin";
 
   return (
     <SafeAreaView style={adminStyles.container} edges={["top"]}>
       <TopNav />
-      <ScrollView contentContainerStyle={adminStyles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={adminStyles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         <View>
           <Text style={adminStyles.title}>Welcome, {firstName}</Text>
           <Text style={adminStyles.subtitle}>
@@ -46,22 +117,32 @@ export default function AdminDashboard() {
           </Text>
         </View>
 
+        {loading && <ActivityIndicator color="#2623D3" />}
+
+        {!!errorMessage && (
+          <Text style={{ color: "#E13F58" }}>{errorMessage}</Text>
+        )}
+
         <View style={local.grid}>
-          <Stat icon="users" value={members.length} label="Total users" tint="#2623D3" />
-          <Stat icon="briefcase" value={employers.length} label="Employers" tint="#0E9F6E" />
-          <Stat icon="user" value={seekers.length} label="Job seekers" tint="#7C3AED" />
-          <Stat icon="clock" value={pending.length} label="Pending verification" tint="#B7791F" />
+          <Stat icon="users" value={stats.users} label="Total users" tint="#2623D3" />
+          <Stat icon="briefcase" value={stats.employers} label="Employers" tint="#0E9F6E" />
+          <Stat icon="user" value={stats.seekers} label="Job seekers" tint="#7C3AED" />
+          <Stat icon="clock" value={stats.pending} label="Pending verification" tint="#B7791F" />
         </View>
 
         <Text style={adminStyles.sectionTitle}>Your activity</Text>
         <View style={adminStyles.card}>
           <View style={adminStyles.rowBetween}>
             <Text style={adminStyles.name}>Employers you verified</Text>
-            <Text style={[adminStyles.name, { color: "#15803D" }]}>{myVerified}</Text>
+            <Text style={[adminStyles.name, { color: "#15803D" }]}>
+              {stats.verified}
+            </Text>
           </View>
           <View style={adminStyles.rowBetween}>
             <Text style={adminStyles.name}>Employers you rejected</Text>
-            <Text style={[adminStyles.name, { color: "#E13F58" }]}>{myRejected}</Text>
+            <Text style={[adminStyles.name, { color: "#E13F58" }]}>
+              {stats.rejected}
+            </Text>
           </View>
         </View>
 
@@ -74,7 +155,9 @@ export default function AdminDashboard() {
             <Feather name="shield" size={20} color="#2623D3" />
             <View>
               <Text style={adminStyles.name}>Verify employers</Text>
-              <Text style={adminStyles.meta}>{pending.length} waiting for review</Text>
+              <Text style={adminStyles.meta}>
+                {stats.pending} waiting for review
+              </Text>
             </View>
           </View>
           <Feather name="chevron-right" size={20} color="#9AA6C1" />
@@ -88,7 +171,9 @@ export default function AdminDashboard() {
             <Feather name="user-check" size={20} color="#2623D3" />
             <View>
               <Text style={adminStyles.name}>Manage users</Text>
-              <Text style={adminStyles.meta}>Suspend, re-activate or delete accounts</Text>
+              <Text style={adminStyles.meta}>
+                View, suspend or re-activate accounts
+              </Text>
             </View>
           </View>
           <Feather name="chevron-right" size={20} color="#9AA6C1" />
@@ -116,6 +201,14 @@ const local = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 10,
   },
-  statValue: { fontSize: 24, fontWeight: "700", color: "#111C4B" },
-  statLabel: { fontSize: 12, color: "#67759A", marginTop: 2 },
+  statValue: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#111C4B",
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#67759A",
+    marginTop: 2,
+  },
 });
