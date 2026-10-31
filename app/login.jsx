@@ -9,7 +9,6 @@ import {
   View
 } from "react-native";
 
-import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import FormButton from "../components/Button";
@@ -43,27 +42,16 @@ export default function Login() {
     }
 
     setError("");
-    setEmail("");
-    setPassword("");
 
-    Alert.alert("Success", "Login successful!", [
-      {
-        text: "OK",
-        onPress: () => {
-          const role = String(
-            result.user?.role || ""
-          ).toLowerCase();
+    const role = String(result.user?.role || "").toLowerCase();
 
-          if (role === "admin") {
-            router.replace("/(tabs)/(admin)/dashboard");
-          } else if (role === "employer") {
-            router.replace("/(tabs)/(employer)/dashboard");
-          } else {
-            router.replace("/(tabs)/(jobseeker)");
-          }
-        },
-      },
-    ]);
+    if (role === "admin") {
+      router.replace("/(tabs)/(admin)/dashboard");
+    } else if (role === "employer") {
+      router.replace("/(tabs)/(employer)/dashboard");
+    } else {
+      router.replace("/(tabs)/(jobseeker)");
+    }
   };
 
 
