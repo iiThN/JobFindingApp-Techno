@@ -90,7 +90,6 @@ export default function ApplyForJob() {
       if (!active) return;
 
       if (error) {
-        console.log("Job error:", error.message);
         setJob(null);
       } else {
         setJob(data);
@@ -132,7 +131,6 @@ export default function ApplyForJob() {
       if (!active) return;
 
       if (error) {
-        console.log("Application check error:", error.message);
       } else {
         setAlreadyApplied(!!data);
       }
@@ -212,7 +210,6 @@ export default function ApplyForJob() {
         );
       }
     } catch (error) {
-      console.log("Document picker error:", error);
 
       Alert.alert(
         "Attachment Failed",
@@ -248,7 +245,6 @@ export default function ApplyForJob() {
 
       return fileData;
     } catch (error) {
-      console.log("File read error:", error);
 
       throw new Error(
         `Cannot read "${attachment.name}". Please select the file again.`
@@ -391,7 +387,6 @@ export default function ApplyForJob() {
       try {
         await refreshApplications();
       } catch (refreshError) {
-        console.log("Refresh error:", refreshError);
       }
 
       Alert.alert(
@@ -405,7 +400,6 @@ export default function ApplyForJob() {
         ]
       );
     } catch (error) {
-      console.log("Application error:", error);
 
       // Limpyo lang kung wala pa gisulayan ang DB insert.
       // Dili tangtangon ang files kung posible nga na-save na.

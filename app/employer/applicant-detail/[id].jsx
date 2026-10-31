@@ -86,7 +86,6 @@ export default function ApplicantDetailScreen() {
           setStatus(data.status);
           setReplyMessage(data.reply_from_employer || "");
         } catch (error) {
-          console.log("Applicant detail error:", error);
 
           if (active) {
             setApplicantData(null);
@@ -128,7 +127,6 @@ export default function ApplicantDetailScreen() {
 
       await Linking.openURL(data.signedUrl);
     } catch (error) {
-      console.log("Open attachment error:", error);
 
       Alert.alert(
         "Unable to Open File",
@@ -181,7 +179,6 @@ export default function ApplicantDetailScreen() {
                 `Applicant status updated to ${newStatus}.`
               );
             } catch (error) {
-              console.log("Update application error:", error);
 
               Alert.alert(
                 "Update Failed",

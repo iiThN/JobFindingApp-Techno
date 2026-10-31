@@ -1,5 +1,6 @@
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -36,6 +37,8 @@ export default function ApplicationCard({
   application,
   onPress,
 }) {
+  const [showReply, setShowReply] = useState(false);
+
   const s = STATUS[application.status] || STATUS.Pending;
 
   const date = new Date(
@@ -45,84 +48,133 @@ export default function ApplicationCard({
     day: "numeric",
   });
 
+  const hasReply = !!application.replyMessage?.trim();
+
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <View style={styles.top}>
-        <View
-          style={[
-            styles.iconBox,
-            {
-              backgroundColor: job.color || "#E9ECFF",
-            },
-          ]}
-        >
-          <MaterialCommunityIcons
-            name={job.icon || "briefcase-outline"}
-            size={25}
-            color="#2623D3"
-          />
-        </View>
-
-        <View style={styles.info}>
-          <Text
-            style={styles.title}
-            numberOfLines={2}
-          >
-            {job.title}
-          </Text>
-
-          <Text
-            style={styles.company}
-            numberOfLines={1}
-          >
-            {job.company} · {job.location}
-          </Text>
-        </View>
-
-        <Text
-          style={[
-            styles.pill,
-            {
-              backgroundColor: s.bg,
-              color: s.fg,
-            },
-          ]}
-        >
-          {application.status}
-        </Text>
-      </View>
-
-      <View style={styles.bars}>
-        {[0, 1, 2, 3].map((i) => (
+    <View style={styles.card}>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.8}
+      >
+        <View style={styles.top}>
           <View
-            key={i}
             style={[
-              styles.bar,
+              styles.iconBox,
               {
-                backgroundColor:
-                  i < s.steps
-                    ? s.bar
-                    : "#E1E5F2",
+                backgroundColor: job.color || "#E9ECFF",
               },
             ]}
-          />
-        ))}
-      </View>
+          >
+            <MaterialCommunityIcons
+              name={job.icon || "briefcase-outline"}
+              size={25}
+              color="#2623D3"
+            />
+          </View>
 
-      <View style={styles.bottom}>
-        <Text style={styles.note}>
-          {s.note} · Applied {date}
-        </Text>
+          <View style={styles.info}>
+            <Text
+              style={styles.title}
+              numberOfLines={2}
+            >
+              {job.title}
+            </Text>
 
-        <Text style={styles.view}>
-          View
-        </Text>
-      </View>
-    </TouchableOpacity>
+            <Text
+              style={styles.company}
+              numberOfLines={1}
+            >
+              {job.company} · {job.location}
+            </Text>
+          </View>
+
+          <Text
+            style={[
+              styles.pill,
+              {
+                backgroundColor: s.bg,
+                color: s.fg,
+              },
+            ]}
+          >
+            {application.status}
+          </Text>
+        </View>
+
+        <View style={styles.bars}>
+          {[0, 1, 2, 3].map((i) => (
+            <View
+              key={i}
+              style={[
+                styles.bar,
+                {
+                  backgroundColor:
+                    i < s.steps ? s.bar : "#E1E5F2",
+                },
+              ]}
+            />
+          ))}
+        </View>
+
+        <View style={styles.bottom}>
+          <Text style={styles.note}>
+            {s.note} · Applied {date}
+          </Text>
+
+          <Text style={styles.view}>
+            View
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      {hasReply && (
+        <>
+          <View style={styles.divider} />
+
+          <TouchableOpacity
+            style={styles.replyButton}
+            onPress={() => setShowReply(!showReply)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.replyButtonLeft}>
+              <MaterialCommunityIcons
+                name="message-text-outline"
+                size={18}
+                color="#2623D3"
+              />
+
+              <Text style={styles.replyButtonText}>
+                {showReply
+                  ? "Hide Employer Reply"
+                  : "View Employer Reply"}
+              </Text>
+            </View>
+
+            <MaterialCommunityIcons
+              name={
+                showReply
+                  ? "chevron-up"
+                  : "chevron-down"
+              }
+              size={20}
+              color="#2623D3"
+            />
+          </TouchableOpacity>
+
+          {showReply && (
+            <View style={styles.replyBox}>
+              <Text style={styles.replyLabel}>
+                Message from Employer
+              </Text>
+
+              <Text style={styles.replyMessage}>
+                {application.replyMessage}
+              </Text>
+            </View>
+          )}
+        </>
+      )}
+    </View>
   );
 }
 
@@ -172,6 +224,7 @@ const styles = StyleSheet.create({
   bars: {
     flexDirection: "row",
     gap: 5,
+    marginTop: 12,
   },
   bar: {
     flex: 1,
@@ -182,6 +235,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginTop: 12,
   },
   note: {
     flex: 1,
@@ -192,5 +246,40 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: "#2623D3",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#EDF0F7",
+  },
+  replyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  replyButtonLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  replyButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#2623D3",
+  },
+  replyBox: {
+    backgroundColor: "#F6F8FF",
+    borderRadius: 12,
+    padding: 12,
+  },
+  replyLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#111C4B",
+    marginBottom: 6,
+  },
+  replyMessage: {
+    fontSize: 13,
+    color: "#4B5563",
+    lineHeight: 20,
   },
 });

@@ -25,7 +25,6 @@ export function ApplicationsProvider({ children }) {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.log("Applications error:", error.message);
     } else {
       setApplications(
         (data || []).map((item) => ({
@@ -66,7 +65,6 @@ export function ApplicationsProvider({ children }) {
       if (!active) return;
 
       if (error) {
-        console.log("Applications error:", error.message);
       } else {
         setApplications(
           (data || []).map((item) => ({

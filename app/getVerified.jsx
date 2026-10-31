@@ -78,8 +78,6 @@ export default function GetVerified() {
           return;
         }
 
-        console.log("Selected file:", file.name);
-        console.log("File URI:", file.uri);
 
         try {
           // Test reading the selected file using fetch
@@ -117,7 +115,6 @@ export default function GetVerified() {
 
       setError("");
     } catch (err) {
-      console.log("Document picker error:", err);
 
       setError(
         err.message || "Unable to select documents."
@@ -263,7 +260,6 @@ export default function GetVerified() {
         ]
       );
     } catch (err) {
-      console.log("Verification error:", err);
 
       setError(
         err.message ||

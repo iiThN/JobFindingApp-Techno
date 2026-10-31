@@ -80,8 +80,6 @@ export default function EmployerApplicantsScreen() {
             .in("job_id", jobIds)
             .order("created_at", { ascending: false });
 
-          console.log("Employer applications:", data);
-          console.log("Employer applications error:", error);
 
           if (error) throw error;
 
@@ -112,7 +110,6 @@ export default function EmployerApplicantsScreen() {
 
           if (active) setApplicants(mapped);
         } catch (error) {
-          console.log("Load applicants error:", error);
 
           if (active) {
             setApplicants([]);

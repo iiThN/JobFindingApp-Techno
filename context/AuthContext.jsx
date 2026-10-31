@@ -53,7 +53,6 @@ export function AuthProvider({ children }) {
           }
         }
       } catch (error) {
-        console.log("Session error:", error.message);
       } finally {
         if (active) setLoading(false);
       }
@@ -131,14 +130,12 @@ export function AuthProvider({ children }) {
         },
         async (payload) => {
             if (payload.new.status === "suspended") {
-              console.log("Account suspended. Signing out.");
 
               setCurrentUser(null);
 
               const { error } = await supabase.auth.signOut();
 
               if (error) {
-                console.log("Sign out error:", error.message);
               }
 
               Alert.alert(

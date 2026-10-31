@@ -33,16 +33,17 @@ export default function HomePage() {
   const fetchJobs = async () => {
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("jobs")
-      .select(`
-        *,
-        profiles:employer_id (
-          name
-        )
-      `)
-      .eq("status", "Open")
-      .order("created_at", { ascending: false });
+  const { data, error } = await supabase
+    .from("jobs")
+    .select(`
+      *,
+      profiles:employer_id (
+        name
+      )
+    `)
+    .eq("status", "Open")
+    .eq("is_archived", false)
+    .order("created_at", { ascending: false });
 
     if (error) {
       Alert.alert("Error", error.message);

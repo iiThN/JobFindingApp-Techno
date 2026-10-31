@@ -42,9 +42,6 @@ export default function JobApps() {
             error: authError,
           } = await supabase.auth.getUser();
 
-          console.log("Context User ID:", currentUser?.id);
-          console.log("Supabase Auth ID:", user?.id);
-          console.log("Auth error:", authError);
 
           if (!user?.id) {
             if (active) {
@@ -55,16 +52,14 @@ export default function JobApps() {
           }
 
           // Kuhaon una ang applications.
-          const { data, error } = await supabase
-            .from("applications")
-            .select(
-              "id, job_id, applicant_id, status, created_at"
-            )
-            .eq("applicant_id", user.id)
-            .order("created_at", { ascending: false });
+        const { data, error } = await supabase
+          .from("applications")
+          .select(
+            "id, job_id, applicant_id, status, reply_from_employer, created_at"
+          )
+          .eq("applicant_id", user.id)
+          .order("created_at", { ascending: false });
 
-          console.log("Applications data:", data);
-          console.log("Applications error:", error);
 
           if (error) {
             throw error;
@@ -93,8 +88,6 @@ export default function JobApps() {
                 `)
                 .in("id", jobIds);
 
-            console.log("Related jobs:", jobData);
-            console.log("Jobs error:", jobError);
 
             if (!jobError) {
               jobs = jobData || [];
@@ -112,6 +105,7 @@ export default function JobApps() {
                 jobId: row.job_id,
                 status: row.status,
                 appliedAt: row.created_at,
+                replyMessage: row.reply_from_employer || "",
               },
               job: {
                 id: row.job_id,
@@ -128,13 +122,11 @@ export default function JobApps() {
             };
           });
 
-          console.log("Mapped applications:", mapped.length);
 
           if (active) {
             setItems(mapped);
           }
         } catch (error) {
-          console.log("Load applications error:", error);
 
           if (active) {
             setLoadError(

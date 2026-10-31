@@ -169,12 +169,12 @@ export default function JobDetailScreen() {
           onPress: async () => {
             try {
               setDeleting(true);
-              const { data, error } = await supabase
-                .from("jobs")
-                .delete()
-                .eq("id", job.id)
-                .eq("employer_id", job.employer_id)
-                .select("id");
+            const { data, error } = await supabase
+              .from("jobs")
+              .update({ is_archived: true })
+              .eq("id", job.id)
+              .eq("employer_id", job.employer_id)
+              .select("id");
               if (error) throw error;
               if (!data?.length) throw new Error("The job could not be deleted.");
               router.back();
