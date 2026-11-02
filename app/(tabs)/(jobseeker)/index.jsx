@@ -174,7 +174,7 @@ export default function HomePage() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.homeHorizontal}
             >
-              {filteredJobs.slice(0, 2).map((job) => (
+              {filteredJobs.slice(0).map((job) => (
                 <JobCard
                   key={job.id}
                   job={job}
@@ -206,26 +206,27 @@ export default function HomePage() {
                 See all
               </Text>
             </View>
+            <View style={{gap: 12}}>
+              {filteredJobs.slice(0).map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  onPress={() => openJob(job.id)}
+                />
+              ))}
 
-            {filteredJobs.slice(2).map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                onPress={() => openJob(job.id)}
-              />
-            ))}
-
-            {filteredJobs.length === 0 && (
-              <Text
-                style={{
-                  textAlign: "center",
-                  marginTop: 30,
-                  color: "#7381A2",
-                }}
-              >
-                No jobs found.
-              </Text>
-            )}
+              {filteredJobs.length === 0 && (
+                <Text
+                  style={{
+                    textAlign: "center",
+                    marginTop: 30,
+                    color: "#7381A2",
+                  }}
+                >
+                  No jobs found.
+                </Text>
+              )}
+            </View>
           </>
         )}
       </ScrollView>

@@ -1,4 +1,3 @@
-
 import {
   createContext,
   useContext,
@@ -26,9 +25,54 @@ export function AuthProvider({ children }) {
 
     return {
       ...data,
-      savedJobs: [],
+      savedJobs: data.bookmarks || [], // Maps database 'bookmarks' array to 'savedJobs'
       skills: [],
     };
+  };
+
+  // Toggle Bookmark function using Supabase RPC
+  const toggleBookmark = async (jobId) => {
+    if (!currentUser) return;
+
+    const currentBookmarks = currentUser.savedJobs || [];
+    const isSaved = currentBookmarks.includes(jobId);
+
+    // Optimistically update UI state immediately
+    const updatedBookmarks = isSaved
+      ? currentBookmarks.filter((id) => id !== jobId)
+      : [...currentBookmarks, jobId];
+
+    setCurrentUser((prev) => ({
+      ...prev,
+      savedJobs: updatedBookmarks,
+    }));
+
+    try {
+      if (isSaved) {
+        // Call remove_bookmark with its matching parameter
+        const { error } = await supabase.rpc("remove_bookmark", {
+          target_profile_id: currentUser.id,
+          job_id_to_remove: jobId,
+        });
+        if (error) throw error;
+      } else {
+        // Call add_bookmark with its matching parameter
+        const { error } = await supabase.rpc("add_bookmark", {
+          target_profile_id: currentUser.id,
+          job_id_to_add: jobId,
+        });
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error("Bookmark RPC Error:", error);
+      Alert.alert("Error", `Failed to update bookmark: ${error.message}`);
+      
+      // Rollback UI state on error
+      setCurrentUser((prev) => ({
+        ...prev,
+        savedJobs: currentBookmarks,
+      }));
+    }
   };
 
   useEffect(() => {
@@ -154,6 +198,7 @@ export function AuthProvider({ children }) {
               return {
                 ...previous,
                 ...payload.new,
+                savedJobs: payload.new.bookmarks || [], // Make sure realtime updates keep savedJobs synced
               };
             });
           }
@@ -254,6 +299,7 @@ export function AuthProvider({ children }) {
         register,
         login,
         logout,
+        toggleBookmark,
       }}
     >
       {children}

@@ -126,8 +126,8 @@ const styles = StyleSheet.create({
   },
 
   homeContent: {
-    paddingHorizontal: 19,
-    paddingTop: 20,
+    paddingHorizontal: 12,
+    paddingTop: 12,
     paddingBottom: 105,
   },
 
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   },
 
   homeHorizontal: {
-    paddingRight: 19,
+    gap: 12
   },
 
   // Employer Header & Modal Styles
@@ -489,25 +489,26 @@ const styles = StyleSheet.create({
   // JobCard styles.
   jobCardFeatured: {
     width: 290,
-    minHeight: 185,
     backgroundColor: "#2623D3",
     borderRadius: 20,
-    padding: 18,
-    marginRight: 12,
+    padding: 16,
     justifyContent: "space-between",
+    flexDirection: "column",
+    gap:16,
   },
 
   jobCardFeaturedTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
   },
 
   jobCardFeaturedIcon: {
     width: 45,
     height: 45,
     backgroundColor: "#FFFFFF",
-    borderRadius: 13,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -516,25 +517,34 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "700",
-    marginTop: 12,
   },
 
   jobCardFeaturedCompany: {
-    color: "#DBE1FF",
+    color: "#c2cade",
     fontSize: 12,
-    marginTop: 5,
+  },
+
+  jobCardLocation: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8
+  },
+
+  jobCardFeaturedLocation: {
+    color: "#c2cade",
+    fontSize: 12,
   },
 
   jobCardFeaturedBottom: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginTop: 15,
   },
 
   jobCardFeaturedTag: {
     color: "#FFFFFF",
     backgroundColor: "#4947E8",
+    fontWeight: 500,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
@@ -552,10 +562,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 17,
     padding: 14,
-    marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+  
     borderWidth: 1,
     borderColor: "#EEF0F8",
     shadowColor: "#111C4B",
@@ -607,12 +616,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 
+  jobCardRight: {
+    flexDirection: "column",
+    justifyContent: "space-between"
+  },
+
   jobCardSalary: {
-    flex: 1,
     color: "#2623D3",
     fontSize: 11,
-    fontWeight: "700",
-    textAlign: "right",
+    alignSelf: "baseline",
+
   },
   employerModalContainer: {
     flex: 1,

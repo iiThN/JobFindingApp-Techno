@@ -1,5 +1,4 @@
-
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather, FontAwesome6, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "../context/AuthContext";
@@ -10,7 +9,7 @@ export default function JobCard({
   featured = false,
   onPress,
 }) {
-  const { currentUser, updateCurrentUser } = useAuth();
+  const { currentUser, toggleBookmark } = useAuth();
 
   const savedJobs = currentUser?.savedJobs || [];
 
@@ -18,19 +17,8 @@ export default function JobCard({
     (savedId) => String(savedId) === String(job.id)
   );
 
-  const toggleSaved = () => {
-    if (!currentUser) return;
-
-    const updatedSavedJobs = isSaved
-      ? savedJobs.filter(
-          (savedId) => String(savedId) !== String(job.id)
-        )
-      : [...savedJobs, String(job.id)];
-
-    updateCurrentUser({
-      savedJobs: updatedSavedJobs,
-      savedCount: updatedSavedJobs.length,
-    });
+  const handleToggle = () => {
+    toggleBookmark(job.id);
   };
 
   if (featured) {
@@ -39,64 +27,85 @@ export default function JobCard({
         <View style={styles.jobCardFeaturedTop}>
           <View style={styles.jobCardFeaturedIcon}>
             <MaterialCommunityIcons
-              name={job.icon}
+              name={job.icon || "briefcase-outline"}
               size={25}
               color="#2623D3"
             />
           </View>
+          <View style={{ flexDirection:"column", flex: 1, justifyContent: "space-between", gap:6}}>
+            <Text
+              style={styles.jobCardFeaturedTitle}
+              numberOfLines={2}
+            >
+              {job.title}
+            </Text>
 
+            <Text
+              style={styles.jobCardFeaturedCompany}
+              numberOfLines={1}
+            >
+              { job.company_name}
+            </Text>
+          </View>
           <TouchableOpacity
-            onPress={toggleSaved}
+            style={{ alignSelf: "flex-start"}}
+            onPress={handleToggle}
             hitSlop={10}
             accessibilityRole="button"
             accessibilityLabel={
               isSaved ? "Remove saved job" : "Save job"
             }
           >
-            <Feather
-              name="bookmark"
-              size={23}
-              color={isSaved ? "#FFD166" : "#FFFFFF"}
+            <MaterialCommunityIcons
+              name={isSaved ? "bookmark" : "bookmark-outline" }
+              size={25}
+              color={isSaved ? "#FFD166" : "#c2cade"}
             />
           </TouchableOpacity>
         </View>
-
+        <View style={{backgroundColor: "#4947E8", height:1.5, width:'100%', borderRadius: 5}}></View>
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={onPress}
-          style={{ flex: 1 }}
+          style={{ flex: 1, gap: 16}}
         >
-          <Text
-            style={styles.jobCardFeaturedTitle}
-            numberOfLines={2}
-          >
-            {job.title}
-          </Text>
-
-          <Text
-            style={styles.jobCardFeaturedCompany}
-            numberOfLines={1}
-          >
-            {job.company} · {job.location}
-          </Text>
+          <View style={styles.jobCardLocation}>
+            <FontAwesome6 name="location-dot" size={14} color="#ffffff" />
+            <Text style={styles.jobCardFeaturedLocation}>
+              {job.location}
+            </Text>
+          </View>
 
           <View style={styles.jobCardFeaturedBottom}>
-            <Text style={styles.jobCardFeaturedTag}>
-              {job.type}
+            <Text
+              style={[
+                styles.jobCardFeaturedTag,
+                {
+                  backgroundColor:
+                    job.status?.toLowerCase() === "open"
+                      ? "#ccf2e0"
+                      : "#ffd3d3",
+                    color:
+                    job.status?.toLowerCase() === "open"
+                      ? "#166534"
+                      : "#991B1B",
+                },
+              ]}
+            >
+              {job.status?.toUpperCase()}
             </Text>
 
+            <Text style={styles.jobCardFeaturedTag}>
+              {job.type || job.job_type}
+            </Text>
+            
             <Text
               style={styles.jobCardFeaturedSalary}
               numberOfLines={1}
             >
-              {job.salary}
+              <Text style={{ fontSize: 16, fontWeight: "600" }}>${job.salary}</Text>
+              <Text style={{ color: "#c2cade" }}>/mo</Text>
             </Text>
-
-            <Feather
-              name="arrow-up-right"
-              size={20}
-              color="#FFFFFF"
-            />
           </View>
         </TouchableOpacity>
       </View>
@@ -112,17 +121,17 @@ export default function JobCard({
           flex: 1,
           flexDirection: "row",
           alignItems: "center",
-          gap: 12,
+          gap: 8,
         }}
       >
         <View
           style={[
             styles.jobCardIconBox,
-            { backgroundColor: job.color },
+            { backgroundColor: job.color || "#EEF2FF" },
           ]}
         >
           <MaterialCommunityIcons
-            name={job.icon}
+            name={job.icon || "briefcase-outline"}
             size={25}
             color="#2623D3"
           />
@@ -140,39 +149,40 @@ export default function JobCard({
             style={styles.jobCardCompany}
             numberOfLines={1}
           >
-            {job.company} · {job.location}
+            {job.company_name} · {job.location}
           </Text>
 
           <View style={styles.jobCardMeta}>
             <Text style={styles.jobCardTag}>
-              {job.type}
+              {job.type || job.job_type}
             </Text>
 
-            <Text
-              style={styles.jobCardSalary}
-              numberOfLines={1}
-            >
-              {job.salary}
-            </Text>
           </View>
         </View>
       </TouchableOpacity>
-
-      <TouchableOpacity
-        onPress={toggleSaved}
-        hitSlop={10}
-        style={{ padding: 5 }}
-        accessibilityRole="button"
-        accessibilityLabel={
-          isSaved ? "Remove saved job" : "Save job"
-        }
-      >
-        <Feather
-          name="bookmark"
-          size={21}
-          color={isSaved ? "#2623D3" : "#A1AAC0"}
-        />
-      </TouchableOpacity>
+      <View style={styles.jobCardRight}>
+        <TouchableOpacity
+          onPress={handleToggle}
+          hitSlop={10}
+          style={{alignSelf:"flex-end", flex: 1}}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isSaved ? "Remove saved job" : "Save job"
+          }
+        >
+          <MaterialCommunityIcons
+            name={isSaved ? "bookmark" : "bookmark-outline" }
+            size={25}
+            color={isSaved ? "#2623D3" : "#A1AAC0"}
+          />
+        </TouchableOpacity>
+        <Text
+          style={styles.jobCardSalary}
+        >
+          <Text style={{ fontSize: 11, fontWeight: "600" }}>${job.salary}</Text>
+          <Text style={{ color: "#7381A2" }}>/mo</Text>
+        </Text>
+      </View>
     </View>
   );
 }

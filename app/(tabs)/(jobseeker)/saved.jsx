@@ -1,7 +1,8 @@
-
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -13,18 +14,52 @@ import JobCard from "../../../components/JobCard";
 import { TopNav } from "../../../components/Navigations";
 import styles from "../../../components/stylesIn";
 import { useAuth } from "../../../context/AuthContext";
-import jobs from "../../../data/jobseeker_data/jobs";
+import { supabase } from "../../../lib/supabase";
 
 export default function SavedJobs() {
   const router = useRouter();
   const { currentUser } = useAuth();
 
+  const [savedJobs, setSavedJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const savedIds = currentUser?.savedJobs || [];
 
-  const savedJobs = jobs.filter((job) =>
-    savedIds.some(
-      (savedId) => String(savedId) === String(job.id)
-    )
+  const fetchSavedJobs = async () => {
+    if (!savedIds || savedIds.length === 0) {
+      setSavedJobs([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("jobs")
+      .select(`
+        *,
+        profiles:employer_id (
+          name
+        )
+      `)
+      .in("id", savedIds);
+
+    if (!error && data) {
+      const formattedJobs = data.map((job) => ({
+        ...job,
+        company: job.profiles?.name || "Employer",
+        type: job.job_type,
+        icon: "briefcase-outline",
+        color: "#E9ECFF",
+      }));
+      setSavedJobs(formattedJobs);
+    }
+    setLoading(false);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchSavedJobs();
+    }, [currentUser?.savedJobs])
   );
 
   const openJob = (id) => {
@@ -72,7 +107,13 @@ export default function SavedJobs() {
             </Text>
           </View>
 
-          {savedJobs.length > 0 ? (
+          {loading ? (
+            <ActivityIndicator
+              size="large"
+              color="#2623D3"
+              style={{ marginTop: 40 }}
+            />
+          ) : savedJobs.length > 0 ? (
             savedJobs.map((job) => (
               <View
                 key={job.id}
