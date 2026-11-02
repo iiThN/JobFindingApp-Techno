@@ -524,13 +524,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
+  jobCardFeaturedMid:{
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+
   jobCardLocation: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8
+    gap: 4
+  },
+  jobCardTime: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4
   },
 
   jobCardFeaturedLocation: {
+    color: "#c2cade",
+    fontSize: 12,
+  },
+
+  jobCardFeaturedTime: {
     color: "#c2cade",
     fontSize: 12,
   },
@@ -577,7 +593,7 @@ const styles = StyleSheet.create({
   jobCardIconBox: {
     width: 52,
     height: 52,
-    borderRadius: 15,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#EEF2FF",
@@ -585,6 +601,7 @@ const styles = StyleSheet.create({
 
   jobCardInfo: {
     flex: 1,
+    gap: 4,
   },
 
   jobCardTitle: {
@@ -596,14 +613,11 @@ const styles = StyleSheet.create({
   jobCardCompany: {
     fontSize: 12,
     color: "#7381A2",
-    marginTop: 4,
   },
 
   jobCardMeta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginTop: 8,
   },
 
   jobCardTag: {

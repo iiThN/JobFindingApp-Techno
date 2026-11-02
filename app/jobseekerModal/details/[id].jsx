@@ -12,9 +12,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import styles from "../../components/stylesIn";
-import { useApplications } from "../../context/ApplicationsContext";
-import { supabase } from "../../lib/supabase";
+import styles from "../../../components/stylesIn";
+import { useApplications } from "../../../context/ApplicationsContext";
+import { supabase } from "../../../lib/supabase";
 
 export default function JobDetails() {
   const { id } = useLocalSearchParams();
@@ -74,7 +74,7 @@ export default function JobDetails() {
 
   const handleApply = () => {
     router.push({
-      pathname: "/apply/[id]",
+      pathname: "/jobseekerModal/apply/[id]",
       params: { id: String(id) },
     });
   };

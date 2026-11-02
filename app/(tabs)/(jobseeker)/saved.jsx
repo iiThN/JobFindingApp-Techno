@@ -64,7 +64,7 @@ export default function SavedJobs() {
 
   const openJob = (id) => {
     router.push({
-      pathname: "/details/[id]",
+      pathname: "/jobseekerModal/details/[id]",
       params: { id: String(id) },
     });
   };

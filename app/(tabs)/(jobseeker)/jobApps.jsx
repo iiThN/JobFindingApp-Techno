@@ -311,7 +311,7 @@ export default function JobApps() {
               application={application}
               onPress={() =>
                 router.push({
-                  pathname: "/details/[id]",
+                  pathname: "/jobseekerModal/details/[id]",
                   params: { id: job.id },
                 })
               }

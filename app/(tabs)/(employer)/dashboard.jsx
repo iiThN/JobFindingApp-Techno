@@ -385,7 +385,7 @@ export default function Dashboard() {
                     activeOpacity={0.8}
                     onPress={() =>
                       router.push(
-                        `/employer/applicant-detail/${item.id}`
+                        `/employerModal/applicant-detail/${item.id}`
                       )
                     }
                   >

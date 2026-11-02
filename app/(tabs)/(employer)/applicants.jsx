@@ -303,7 +303,7 @@ export default function EmployerApplicantsScreen() {
             activeOpacity={0.85}
             onPress={() =>
               router.push(
-                `/employer/applicant-detail/${item.id}`
+                `/employerModal/applicant-detail/${item.id}`
               )
             }
           >

@@ -17,9 +17,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useApplications } from "../../context/ApplicationsContext";
-import { useAuth } from "../../context/AuthContext";
-import { supabase } from "../../lib/supabase";
+import { useApplications } from "../../../context/ApplicationsContext";
+import { useAuth } from "../../../context/AuthContext";
+import { supabase } from "../../../lib/supabase";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;

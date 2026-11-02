@@ -500,7 +500,7 @@ if (jobIds.length > 0) {
             style={styles.jobCardCard}
             activeOpacity={0.9}
             onPress={() =>
-              router.push(`/employer/jobList/${item.id}`)
+              router.push(`/employerModal/jobList/${item.id}`)
             }
           >
             <View style={styles.jobCardIconBox}>
