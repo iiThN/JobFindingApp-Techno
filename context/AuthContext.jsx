@@ -14,7 +14,8 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Get profile, Job Seeker skills, and bookmarks
+  // Get profile and Job Seeker skills from database
+  // Get profile, jobSeeker bookmarks, and skills from database
   const loadProfile = async (userId) => {
     const { data, error } = await supabase
       .from("profiles")
@@ -25,16 +26,15 @@ export function AuthProvider({ children }) {
     if (error) throw error;
 
     let skills = [];
-    let savedJobs = [];
+    let savedBookmarks = [];
 
-    // Load skills and bookmarks for Job Seeker accounts
+    // Load jobSeeker specific data only for Job Seeker accounts
     if (data.role?.toLowerCase() === "job seeker") {
-      const { data: seekerData, error: seekerError } =
-        await supabase
-          .from("jobSeeker")
-          .select("skills, bookmarks")
-          .eq("jobseeker_id", userId)
-          .maybeSingle();
+      const { data: seekerData, error: seekerError } = await supabase
+        .from("jobSeeker")
+        .select("skills, bookmarks")
+        .eq("jobseeker_id", userId)
+        .maybeSingle();
 
       if (seekerError) {
         console.log(
@@ -43,13 +43,13 @@ export function AuthProvider({ children }) {
         );
       } else if (seekerData) {
         skills = seekerData.skills || [];
-        savedJobs = seekerData.bookmarks || [];
+        savedBookmarks = seekerData.bookmarks || [];
       }
     }
 
     return {
       ...data,
-      savedJobs,
+      savedJobs: savedBookmarks, // <--- Now correctly mapped from jobSeeker.bookmarks!
       skills,
     };
   };
