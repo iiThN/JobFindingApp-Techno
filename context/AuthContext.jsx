@@ -14,7 +14,7 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Get profile and Job Seeker skills from database
+  // Get profile, Job Seeker skills, and bookmarks
   const loadProfile = async (userId) => {
     const { data, error } = await supabase
       .from("profiles")
@@ -25,28 +25,31 @@ export function AuthProvider({ children }) {
     if (error) throw error;
 
     let skills = [];
+    let savedJobs = [];
 
-    // Load skills only for Job Seeker accounts
+    // Load skills and bookmarks for Job Seeker accounts
     if (data.role?.toLowerCase() === "job seeker") {
-      const { data: seekerData, error: seekerError } = await supabase
-        .from("jobSeeker")
-        .select("skills")
-        .eq("jobseeker_id", userId)
-        .maybeSingle();
+      const { data: seekerData, error: seekerError } =
+        await supabase
+          .from("jobSeeker")
+          .select("skills, bookmarks")
+          .eq("jobseeker_id", userId)
+          .maybeSingle();
 
       if (seekerError) {
         console.log(
-          "Load Job Seeker skills error:",
+          "Load Job Seeker data error:",
           seekerError.message
         );
-      } else {
-        skills = seekerData?.skills || [];
+      } else if (seekerData) {
+        skills = seekerData.skills || [];
+        savedJobs = seekerData.bookmarks || [];
       }
     }
 
     return {
       ...data,
-      savedJobs: data.bookmarks || [],
+      savedJobs,
       skills,
     };
   };
@@ -107,15 +110,21 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Toggle Bookmark function using Supabase RPC
+  // Toggle Bookmark using Supabase RPC
   const toggleBookmark = async (jobId) => {
     if (!currentUser) return;
 
     const currentBookmarks = currentUser.savedJobs || [];
-    const isSaved = currentBookmarks.includes(jobId);
+
+    // Compare UUIDs as strings
+    const isSaved = currentBookmarks.some(
+      (id) => String(id) === String(jobId)
+    );
 
     const updatedBookmarks = isSaved
-      ? currentBookmarks.filter((id) => id !== jobId)
+      ? currentBookmarks.filter(
+          (id) => String(id) !== String(jobId)
+        )
       : [...currentBookmarks, jobId];
 
     // Optimistically update UI
@@ -126,17 +135,23 @@ export function AuthProvider({ children }) {
 
     try {
       if (isSaved) {
-        const { error } = await supabase.rpc("remove_bookmark", {
-          target_profile_id: currentUser.id,
-          job_id_to_remove: jobId,
-        });
+        const { error } = await supabase.rpc(
+          "remove_bookmark",
+          {
+            target_profile_id: currentUser.id,
+            job_id_to_remove: jobId,
+          }
+        );
 
         if (error) throw error;
       } else {
-        const { error } = await supabase.rpc("add_bookmark", {
-          target_profile_id: currentUser.id,
-          job_id_to_add: jobId,
-        });
+        const { error } = await supabase.rpc(
+          "add_bookmark",
+          {
+            target_profile_id: currentUser.id,
+            job_id_to_add: jobId,
+          }
+        );
 
         if (error) throw error;
       }
@@ -148,7 +163,7 @@ export function AuthProvider({ children }) {
         `Failed to update bookmark: ${error.message}`
       );
 
-      // Rollback if database update fails
+      // Restore previous bookmarks if database update fails
       setCurrentUser((previous) => ({
         ...previous,
         savedJobs: currentBookmarks,
@@ -190,13 +205,12 @@ export function AuthProvider({ children }) {
     restoreSession();
 
     // Listen for logout changes
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (event) => {
+    const { data: listener } =
+      supabase.auth.onAuthStateChange((event) => {
         if (event === "SIGNED_OUT" && active) {
           setCurrentUser(null);
         }
-      }
-    );
+      });
 
     // Refresh account status when returning to app
     const appState = AppState.addEventListener(
@@ -211,7 +225,9 @@ export function AuthProvider({ children }) {
             } = await supabase.auth.getSession();
 
             if (session?.user) {
-              const profile = await loadProfile(session.user.id);
+              const profile = await loadProfile(
+                session.user.id
+              );
 
               if (!active) return;
 
@@ -241,7 +257,7 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // Listen for account suspension and profile changes in real time
+  // Listen for account suspension and profile changes
   useEffect(() => {
     if (!currentUser?.id) return;
 
@@ -284,7 +300,11 @@ export function AuthProvider({ children }) {
               return {
                 ...previous,
                 ...payload.new,
-                savedJobs: payload.new.bookmarks || [],
+
+                // Keep bookmarks from jobSeeker
+                savedJobs: previous.savedJobs || [],
+
+                // Keep existing skills
                 skills: previous.skills || [],
               };
             });
