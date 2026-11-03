@@ -809,17 +809,16 @@ const styles = StyleSheet.create({
   },
   detailsScrollContent: {
     paddingTop: 30,
-    paddingBottom: 40,
+    paddingBottom: 0,
     gap: 16,
   },
   jobDetailsCard: {
     backgroundColor: "#F6F8FF",
-    borderRadius: 18,
-    padding: 10,
-    alignItems: "center",
+    borderTopEndRadius: 20,
+    borderTopStartRadius: 20,
     marginTop: 25,
-    height:100000,
-    gap: 10
+    minHeight:"100%",
+    gap: 6
   },
   jobDetailsPfp: {
     position: "absolute",
@@ -829,6 +828,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     backgroundColor: "#EEF0F8",
     alignItems: "center",
+    alignSelf: "center",
     justifyContent: "center",
     borderWidth: 6,
     borderColor: "#FFFFFF",
@@ -850,7 +850,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#2623D3",
-  
+    textAlign: "center",
   },
   detailsStatsRow: {
     flexDirection: "row",
@@ -891,13 +891,14 @@ const styles = StyleSheet.create({
     padding: 20,
     borderWidth: 1,
     borderColor: "#EEF0F8",
-    width: '100%'
+    width: '100%',
   },
   detailsSectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     marginBottom: 12,
+    
   },
   detailsReqItemBox: {
     flexDirection: "row",

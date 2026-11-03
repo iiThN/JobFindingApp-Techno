@@ -15,6 +15,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   // Get profile and Job Seeker skills from database
+  // Get profile, jobSeeker bookmarks, and skills from database
   const loadProfile = async (userId) => {
     const { data, error } = await supabase
       .from("profiles")
@@ -25,28 +26,30 @@ export function AuthProvider({ children }) {
     if (error) throw error;
 
     let skills = [];
+    let savedBookmarks = [];
 
-    // Load skills only for Job Seeker accounts
+    // Load jobSeeker specific data only for Job Seeker accounts
     if (data.role?.toLowerCase() === "job seeker") {
       const { data: seekerData, error: seekerError } = await supabase
         .from("jobSeeker")
-        .select("skills")
+        .select("skills, bookmarks")
         .eq("jobseeker_id", userId)
         .maybeSingle();
 
       if (seekerError) {
         console.log(
-          "Load Job Seeker skills error:",
+          "Load Job Seeker data error:",
           seekerError.message
         );
-      } else {
-        skills = seekerData?.skills || [];
+      } else if (seekerData) {
+        skills = seekerData.skills || [];
+        savedBookmarks = seekerData.bookmarks || [];
       }
     }
 
     return {
       ...data,
-      savedJobs: data.bookmarks || [],
+      savedJobs: savedBookmarks, // <--- Now correctly mapped from jobSeeker.bookmarks!
       skills,
     };
   };
