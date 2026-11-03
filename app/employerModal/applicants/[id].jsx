@@ -26,7 +26,7 @@ export default function ApplicantsListScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity 
             style={styles.card}
-            onPress={() => router.push(`/employer/applicant-detail/${item.id}`)}
+            onPress={() => router.push(`/employerModal/applicant-detail/${item.id}`)}
           >
             <View style={styles.row}>
               <View>

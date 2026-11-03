@@ -26,8 +26,6 @@ export default function DrawerLayout() {
         options={{ title: "Job Seeker" }}
       />
 
-      
-
       <Drawer.Screen
         name="(admin)"
         options={{ title: "Admin" }}

@@ -2,15 +2,15 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import styles from "../../../components/stylesIn";
@@ -81,7 +81,7 @@ export default function JobDetailScreen() {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error("Please log in again.");
       const { data, error } = await supabase
-        .from("jobs")
+        .from("jobLists")
         .select("*")
         .eq("id", id)
         .eq("employer_id", user.id)
@@ -130,7 +130,7 @@ export default function JobDetailScreen() {
     try {
       setSaving(true);
       const { data, error } = await supabase
-        .from("jobs")
+        .from("jobLists")
         .update({
           title: title.trim(),
           job_type: position,
@@ -170,7 +170,7 @@ export default function JobDetailScreen() {
             try {
               setDeleting(true);
             const { data, error } = await supabase
-              .from("jobs")
+              .from("jobLists")
               .update({ is_archived: true })
               .eq("id", job.id)
               .eq("employer_id", job.employer_id)

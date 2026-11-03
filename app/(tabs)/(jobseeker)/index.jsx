@@ -34,7 +34,7 @@ export default function HomePage() {
     setLoading(true);
 
   const { data, error } = await supabase
-    .from("jobs")
+    .from("jobLists")
     .select(`
       *,
       profiles:employer_id (
@@ -73,7 +73,7 @@ export default function HomePage() {
 
   const openJob = (id) => {
     router.push({
-      pathname: "/details/[id]",
+      pathname: "/jobseekerModal/details/[id]",
       params: { id },
     });
   };
@@ -164,9 +164,12 @@ export default function HomePage() {
                 </Text>
               </View>
 
-              <Text style={styles.homeSeeAll}>
-                See all
-              </Text>
+              <TouchableOpacity onPress={() => router.push({
+                pathname: "/jobseekerModal/allJobList",
+                params: { title: "Recommended Jobs" }
+              })}>
+                <Text style={styles.homeSeeAll}>See all</Text>
+              </TouchableOpacity>
             </View>
 
             <ScrollView
@@ -202,9 +205,13 @@ export default function HomePage() {
                 </Text>
               </View>
 
-              <Text style={styles.homeSeeAll}>
-                See all
-              </Text>
+              <TouchableOpacity onPress={() => router.push({
+                pathname: "/jobseekerModal/allJobList",
+                params: { title: "Latest Jobs" }
+              })}>
+                <Text style={styles.homeSeeAll}>See all</Text>
+              </TouchableOpacity>
+
             </View>
             <View style={{gap: 12}}>
               {filteredJobs.slice(0).map((job) => (

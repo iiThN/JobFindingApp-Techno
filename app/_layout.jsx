@@ -100,17 +100,22 @@ export default function RootLayout() {
           />
 
           <Stack.Screen
-            name="details/[id]"
+            name="jobseekerModal/details/[id]"
             options={{ headerShown: false }}
           />
 
           <Stack.Screen
-            name="apply/[id]"
+            name="jobseekerModal/apply/[id]"
             options={{ headerShown: false }}
           />
 
           <Stack.Screen
-            name="employer/applicant-detail/[id]"
+            name="jobseekerModal/allJobList"
+            options={{ headerShown: false }}
+          />
+
+          <Stack.Screen
+            name="employerModal/applicant-detail/[id]"
             options={{
               headerShown: true,
               headerTitle: "",
@@ -122,7 +127,7 @@ export default function RootLayout() {
           />
 
           <Stack.Screen
-            name="employer/applicants/[id]"
+            name="employerModal/applicants/[id]"
             options={{
               headerShown: true,
               headerTitle: "",
@@ -134,14 +139,14 @@ export default function RootLayout() {
           />
 
           <Stack.Screen
-            name="employer/applicants-detail/[id]"
+            name="employerModal/applicants-detail/[id]"
             options={{
               headerShown: false,
             }}
           />
 
           <Stack.Screen
-            name="employer/jobList/[id]"
+            name="employerModal/jobList/[id]"
             options={{
               headerShown: true,
               headerTitle: "",

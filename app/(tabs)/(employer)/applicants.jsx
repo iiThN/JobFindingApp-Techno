@@ -3,13 +3,13 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -49,7 +49,7 @@ export default function EmployerApplicantsScreen() {
           // Kuhaon ang jobs sa logged-in employer.
           const { data: jobs, error: jobsError } =
             await supabase
-              .from("jobs")
+              .from("jobLists")
               .select("id, title")
               .eq("employer_id", user.id);
 
@@ -303,7 +303,7 @@ export default function EmployerApplicantsScreen() {
             activeOpacity={0.85}
             onPress={() =>
               router.push(
-                `/employer/applicant-detail/${item.id}`
+                `/employerModal/applicant-detail/${item.id}`
               )
             }
           >

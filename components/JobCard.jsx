@@ -1,8 +1,44 @@
-import { Feather, FontAwesome6, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { FontAwesome6, MaterialCommunityIcons, Octicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "../context/AuthContext";
 import styles from "./stylesIn";
+
+export function getTimeAgo(dateString) {
+  if (!dateString) return "";
+  
+  const now = new Date();
+  const created = new Date(dateString);
+  const diffInSeconds = Math.floor((now - created) / 1000);
+  
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  const diffInDays = Math.floor(diffInHours / 24);
+  const diffInMonths = Math.floor(diffInDays / 30);
+  const diffInYears = Math.floor(diffInDays / 365);
+
+  if (diffInSeconds < 60) {
+    return "Just now";
+  } else if (diffInMinutes < 60) {
+    return `${diffInMinutes}m ago`;
+  } else if (diffInHours < 24) {
+    return `${diffInHours}h ago`;
+  } else if (diffInDays === 0) {
+    return "Today";
+  } else if (diffInDays === 1) {
+    return "Yesterday";
+  } else if (diffInDays < 30) {
+    return `${diffInDays} days ago`;
+  } else if (diffInMonths === 1) {
+    return "1 month ago";
+  } else if (diffInMonths < 12) {
+    return `${diffInMonths} months ago`;
+  } else if (diffInYears === 1) {
+    return "1 year ago";
+  } else {
+    return `${diffInYears} years ago`;
+  }
+}
 
 export default function JobCard({
   job,
@@ -63,19 +99,26 @@ export default function JobCard({
             />
           </TouchableOpacity>
         </View>
-        <View style={{backgroundColor: "#4947E8", height:1.5, width:'100%', borderRadius: 5}}></View>
+        <View style={{backgroundColor: "#4947E8", height:1.5 , width:'100%', borderRadius: 5}}></View>
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={onPress}
           style={{ flex: 1, gap: 16}}
         >
-          <View style={styles.jobCardLocation}>
-            <FontAwesome6 name="location-dot" size={14} color="#ffffff" />
-            <Text style={styles.jobCardFeaturedLocation}>
-              {job.location}
-            </Text>
+          <View style={styles.jobCardFeaturedMid}>
+            <View style={styles.jobCardLocation}>
+              <FontAwesome6 name="location-dot" size={14} color="#c2cade" />
+              <Text style={styles.jobCardFeaturedLocation}>
+                {job.location}
+              </Text>
+            </View>
+            <View style={styles.jobCardTime}>
+              <Octicons name="clock-fill" size={13} color="#c2cade" />
+              <Text style={styles.jobCardFeaturedTime}>
+                {getTimeAgo(job.created_at)}
+              </Text>
+            </View>
           </View>
-
           <View style={styles.jobCardFeaturedBottom}>
             <Text
               style={[
@@ -149,7 +192,7 @@ export default function JobCard({
             style={styles.jobCardCompany}
             numberOfLines={1}
           >
-            {job.company_name} · {job.location}
+            {job.company_name} <Text style={{color:"#4947E8"}}>•</Text> {job.location} <Text style={{color:"#4947E8"}}>•</Text> {getTimeAgo(job.created_at)}
           </Text>
 
           <View style={styles.jobCardMeta}>
