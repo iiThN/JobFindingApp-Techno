@@ -1,6 +1,13 @@
-import { Feather, FontAwesome, Octicons } from "@expo/vector-icons";
+import { Feather, FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
-import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+import { NotificationBell } from "./NotificationBell";
 
 export function TopNav() {
   const navigation = useNavigation("/(tabs)");
@@ -13,26 +20,30 @@ export function TopNav() {
         accessibilityLabel="Open menu"
         onPress={() => navigation.openDrawer()}
       >
-        <Feather name="menu" size={28} color="#111C4B" />
+        <Feather
+          name="menu"
+          size={28}
+          color="#111C4B"
+        />
       </TouchableOpacity>
+
       <View style={styles.topNavContainerRight}>
         <TouchableOpacity
           style={styles.topNavItem}
           activeOpacity={0.5}
-          accessibilityLabel="Notifications"
-          onPress={() => Alert.alert("Notifications", "Coming soon.")}
+          accessibilityLabel="Search"
+          onPress={() =>
+            Alert.alert("Search", "Search is coming soon.")
+          }
         >
-          <FontAwesome name="search" size={24} color="#111C4B" />
+          <FontAwesome
+            name="search"
+            size={24}
+            color="#111C4B"
+          />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.topNavItem}
-          activeOpacity={0.5}
-          accessibilityLabel="Notifications"
-          onPress={() => Alert.alert("Notifications", "Coming soon.")}
-        >
-          <Octicons name="bell-fill" size={24} color="#111C4B" />
-        </TouchableOpacity>
+        <NotificationBell />
       </View>
     </View>
   );
@@ -46,12 +57,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop:8,
+    paddingTop: 8,
   },
+
   topNavContainerRight: {
-    flexDirection: 'row',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 30,
   },
+
   topNavItem: {
     justifyContent: "center",
     alignItems: "center",
