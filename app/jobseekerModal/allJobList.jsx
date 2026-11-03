@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import JobCard from "../../components/JobCard";
+import JobFilterModal from "../../components/JobFilterModal";
 import styles from "../../components/stylesIn";
 import { supabase } from "../../lib/supabase";
 
@@ -25,6 +26,12 @@ export default function AllJobList() {
   const [jobs, setJobs] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [filters, setFilters] = useState({
+    jobType: "All",
+    location: "",
+    skill: "",
+  });
 
   const fetchAllJobs = async () => {
     setLoading(true);
@@ -69,17 +76,34 @@ export default function AllJobList() {
     });
   };
 
-  // Search and filter logic transferred here
+  // Search and filter the jobs already loaded from Supabase.
   const filteredJobs = jobs.filter((job) => {
     const keyword = search.toLowerCase().trim();
+    const searchText = [job.title, job.company_name, job.location, job.skills]
+      .map((value) => Array.isArray(value) ? value.join(" ") : String(value || ""))
+      .join(" ")
+      .toLowerCase();
 
-    return (
-      job.title?.toLowerCase().includes(keyword) ||
-      job.company_name?.toLowerCase().includes(keyword) ||
-      job.location?.toLowerCase().includes(keyword) ||
-      job.skills?.toLowerCase().includes(keyword)
-    );
+    const type = String(job.job_type || job.type || "").toLowerCase();
+    const selectedType = filters.jobType.toLowerCase();
+    const matchesType = selectedType === "all" ||
+      (selectedType === "internship / ojt"
+        ? type.includes("internship") || type.includes("ojt")
+        : type.replace(/[\s-]/g, "") === selectedType.replace(/[\s-]/g, ""));
+    const matchesLocation = !filters.location.trim() ||
+      String(job.location || "").toLowerCase().includes(filters.location.trim().toLowerCase());
+    const matchesSkill = !filters.skill.trim() ||
+      String(Array.isArray(job.skills) ? job.skills.join(", ") : job.skills || "")
+        .toLowerCase().includes(filters.skill.trim().toLowerCase());
+
+    return (!keyword || searchText.includes(keyword)) && matchesType && matchesLocation && matchesSkill;
   });
+
+  const activeFilterCount = [
+    filters.jobType !== "All",
+    Boolean(filters.location.trim()),
+    Boolean(filters.skill.trim()),
+  ].filter(Boolean).length;
 
   return (
     <SafeAreaView style={styles.homeContainer} edges={["top"]}>
@@ -114,6 +138,14 @@ export default function AllJobList() {
         </Text>
       </View>
 
+      <JobFilterModal
+        visible={filterVisible}
+        filters={filters}
+        onClose={() => setFilterVisible(false)}
+        onApply={(nextFilters) => { setFilters(nextFilters); setFilterVisible(false); }}
+        onReset={() => { setFilters({ jobType: "All", location: "", skill: "" }); setFilterVisible(false); }}
+      />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.homeContent, { paddingTop: 20 }]}
@@ -133,9 +165,16 @@ export default function AllJobList() {
 
           <TouchableOpacity
             style={styles.homeFilter}
-            accessibilityLabel="Filter options"
+            onPress={() => setFilterVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Open job filters"
           >
             <Feather name="sliders" size={21} color="#FFFFFF" />
+            {activeFilterCount > 0 && (
+              <View style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: "#FFB547", alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ color: "#111C4B", fontSize: 10, fontWeight: "800" }}>{activeFilterCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
