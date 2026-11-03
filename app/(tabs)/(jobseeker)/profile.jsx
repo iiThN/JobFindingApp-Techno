@@ -139,7 +139,7 @@ export default function Profile() {
     setEditVisible(true);
   };
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     if (!draft.name?.trim()) {
       Alert.alert("Name required", "Please enter your full name.");
       return;
@@ -150,7 +150,7 @@ export default function Profile() {
       return;
     }
 
-    updateCurrentUser({
+    const success = await updateCurrentUser({
       name: draft.name.trim(),
       email: draft.email.trim().toLowerCase(),
       phone: draft.phone.trim(),
@@ -159,26 +159,36 @@ export default function Profile() {
       bio: draft.bio.trim(),
     });
 
+    if (!success) return;
+
     setEditVisible(false);
-    Alert.alert("Success", "Your profile has been updated.");
+    Alert.alert(
+      "Profile updated",
+      "Your changes are updated in this app session. Only skills are currently saved to your Supabase Job Seeker record."
+    );
   };
 
-  const addSkill = () => {
+  const addSkill = async () => {
     const skill = skillInput.trim();
 
     if (!skill) return;
 
     if (
       skills.some(
-        (item) => item.toLowerCase() === skill.toLowerCase()
+        (item) => String(item).trim().toLowerCase() === skill.toLowerCase()
       )
     ) {
       Alert.alert("Duplicate skill", "This skill already exists.");
       return;
     }
 
-    updateCurrentUser({ skills: [...skills, skill] });
-    setSkillInput("");
+    const success = await updateCurrentUser({
+      skills: [...skills, skill],
+    });
+
+    if (success) {
+      setSkillInput("");
+    }
   };
 
   const removeSkill = (skill) => {
@@ -187,10 +197,15 @@ export default function Profile() {
       {
         text: "Remove",
         style: "destructive",
-        onPress: () =>
-          updateCurrentUser({
+        onPress: async () => {
+          const success = await updateCurrentUser({
             skills: skills.filter((item) => item !== skill),
-          }),
+          });
+
+          if (!success) {
+            Alert.alert("Unable to remove skill", "Please try again.");
+          }
+        },
       },
     ]);
   };
@@ -703,7 +718,7 @@ export default function Profile() {
               onPress={() =>
                 Alert.alert(
                   "Privacy Information",
-                  "Profile information is currently managed in app memory. Secure backend storage is not connected yet."
+                  "Your skills are saved in your Supabase Job Seeker record. Other profile details, resume selection, and job alert preferences are currently kept only in this app session and are not yet saved permanently."
                 )
               }
             >

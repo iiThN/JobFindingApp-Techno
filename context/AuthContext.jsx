@@ -1,3 +1,4 @@
+
 import {
   createContext,
   useContext,
@@ -13,7 +14,7 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Get profile from database
+  // Get profile and Job Seeker skills from database
   const loadProfile = async (userId) => {
     const { data, error } = await supabase
       .from("profiles")
@@ -23,11 +24,87 @@ export function AuthProvider({ children }) {
 
     if (error) throw error;
 
+    let skills = [];
+
+    // Load skills only for Job Seeker accounts
+    if (data.role?.toLowerCase() === "job seeker") {
+      const { data: seekerData, error: seekerError } = await supabase
+        .from("jobSeeker")
+        .select("skills")
+        .eq("jobseeker_id", userId)
+        .maybeSingle();
+
+      if (seekerError) {
+        console.log(
+          "Load Job Seeker skills error:",
+          seekerError.message
+        );
+      } else {
+        skills = seekerData?.skills || [];
+      }
+    }
+
     return {
       ...data,
-      savedJobs: data.bookmarks || [], // Maps database 'bookmarks' array to 'savedJobs'
-      skills: [],
+      savedJobs: data.bookmarks || [],
+      skills,
     };
+  };
+
+  // Update current user information
+  const updateCurrentUser = async (updates) => {
+    if (!currentUser) return false;
+
+    try {
+      // Save Job Seeker skills to Supabase
+      if (
+        Object.prototype.hasOwnProperty.call(updates, "skills")
+      ) {
+        if (currentUser.role?.toLowerCase() !== "job seeker") {
+          throw new Error(
+            "Only Job Seeker accounts can update skills."
+          );
+        }
+
+        const { data, error } = await supabase
+          .from("jobSeeker")
+          .update({
+            skills: updates.skills,
+          })
+          .eq("jobseeker_id", currentUser.id)
+          .select("jobseeker_id")
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data) {
+          throw new Error(
+            "Your Job Seeker record was not found or cannot be updated. Please check your Supabase RLS policies."
+          );
+        }
+      }
+
+      // Update app state after successful database update
+      setCurrentUser((previous) => {
+        if (!previous) return previous;
+
+        return {
+          ...previous,
+          ...updates,
+        };
+      });
+
+      return true;
+    } catch (error) {
+      console.error(
+        "Update Profile Error:",
+        error.message
+      );
+
+      Alert.alert("Update Failed", error.message);
+
+      return false;
+    }
   };
 
   // Toggle Bookmark function using Supabase RPC
@@ -37,48 +114,52 @@ export function AuthProvider({ children }) {
     const currentBookmarks = currentUser.savedJobs || [];
     const isSaved = currentBookmarks.includes(jobId);
 
-    // Optimistically update UI state immediately
     const updatedBookmarks = isSaved
       ? currentBookmarks.filter((id) => id !== jobId)
       : [...currentBookmarks, jobId];
 
-    setCurrentUser((prev) => ({
-      ...prev,
+    // Optimistically update UI
+    setCurrentUser((previous) => ({
+      ...previous,
       savedJobs: updatedBookmarks,
     }));
 
     try {
       if (isSaved) {
-        // Call remove_bookmark with its matching parameter
         const { error } = await supabase.rpc("remove_bookmark", {
           target_profile_id: currentUser.id,
           job_id_to_remove: jobId,
         });
+
         if (error) throw error;
       } else {
-        // Call add_bookmark with its matching parameter
         const { error } = await supabase.rpc("add_bookmark", {
           target_profile_id: currentUser.id,
           job_id_to_add: jobId,
         });
+
         if (error) throw error;
       }
     } catch (error) {
       console.error("Bookmark RPC Error:", error);
-      Alert.alert("Error", `Failed to update bookmark: ${error.message}`);
-      
-      // Rollback UI state on error
-      setCurrentUser((prev) => ({
-        ...prev,
+
+      Alert.alert(
+        "Error",
+        `Failed to update bookmark: ${error.message}`
+      );
+
+      // Rollback if database update fails
+      setCurrentUser((previous) => ({
+        ...previous,
         savedJobs: currentBookmarks,
       }));
     }
   };
 
+  // Restore existing login session
   useEffect(() => {
     let active = true;
 
-    // Restore existing login session
     const restoreSession = async () => {
       try {
         const {
@@ -97,6 +178,10 @@ export function AuthProvider({ children }) {
           }
         }
       } catch (error) {
+        console.log(
+          "Restore session error:",
+          error.message
+        );
       } finally {
         if (active) setLoading(false);
       }
@@ -156,7 +241,7 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // Listen for account suspension in real time
+  // Listen for account suspension and profile changes in real time
   useEffect(() => {
     if (!currentUser?.id) return;
 
@@ -173,23 +258,24 @@ export function AuthProvider({ children }) {
           filter: `id=eq.${userId}`,
         },
         async (payload) => {
-            if (payload.new.status === "suspended") {
+          if (payload.new.status === "suspended") {
+            setCurrentUser(null);
 
-              setCurrentUser(null);
+            const { error } = await supabase.auth.signOut();
 
-              const { error } = await supabase.auth.signOut();
-
-              if (error) {
-              }
-
-              Alert.alert(
-                "Account Suspended",
-                "Your account has been suspended by an administrator. Please contact support if you believe this is a mistake.",
-                [{ text: "OK" }]
+            if (error) {
+              console.log(
+                "Sign out error:",
+                error.message
               );
             }
-         else {
-            // Update profile when account details change
+
+            Alert.alert(
+              "Account Suspended",
+              "Your account has been suspended by an administrator. Please contact support if you believe this is a mistake.",
+              [{ text: "OK" }]
+            );
+          } else {
             setCurrentUser((previous) => {
               if (!previous || previous.id !== userId) {
                 return previous;
@@ -198,7 +284,8 @@ export function AuthProvider({ children }) {
               return {
                 ...previous,
                 ...payload.new,
-                savedJobs: payload.new.bookmarks || [], // Make sure realtime updates keep savedJobs synced
+                savedJobs: payload.new.bookmarks || [],
+                skills: previous.skills || [],
               };
             });
           }
@@ -288,7 +375,9 @@ export function AuthProvider({ children }) {
 
     setCurrentUser(null);
 
-    return { success: true };
+    return {
+      success: true,
+    };
   };
 
   return (
@@ -300,6 +389,7 @@ export function AuthProvider({ children }) {
         login,
         logout,
         toggleBookmark,
+        updateCurrentUser,
       }}
     >
       {children}
@@ -311,7 +401,9 @@ export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider.");
+    throw new Error(
+      "useAuth must be used inside AuthProvider."
+    );
   }
 
   return context;
