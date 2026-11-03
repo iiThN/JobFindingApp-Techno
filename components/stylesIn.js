@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
 
   detailsApply: {
     backgroundColor: "#2623D3",
-    borderRadius: 15,
+    borderRadius: 100,
     padding: 17,
     alignItems: "center",
   },
@@ -790,6 +790,144 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: "#2623D3",
+  },
+
+  // details/[id].jsx styles
+  // Add these inside your existing stylesheet object in stylesIn.js:
+  detailsHeaderBanner: {
+    backgroundColor: "#2623D3",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  detailsHeaderTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  detailsScrollContent: {
+    paddingTop: 30,
+    paddingBottom: 40,
+    gap: 16,
+  },
+  jobDetailsCard: {
+    backgroundColor: "#F6F8FF",
+    borderRadius: 18,
+    padding: 10,
+    alignItems: "center",
+    marginTop: 25,
+    height:100000,
+    gap: 10
+  },
+  jobDetailsPfp: {
+    position: "absolute",
+    top: -40,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#EEF0F8",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 6,
+    borderColor: "#FFFFFF",
+  },
+
+  jobDetailsInitialText: {
+    color: "#2623D3",
+    fontSize: 26,
+    fontWeight: "800",
+  },
+  jobDetailsTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#111C4B",
+    textAlign: "center",
+
+  },
+  jobDetailsCompany: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#2623D3",
+  
+  },
+  detailsStatsRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  detailsStatBox: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#EEF0F8",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  detailsStatIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#EEF2FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailsStatLabel: {
+    fontSize: 11,
+    color: "#8590A5",
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  detailsStatValue: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#111C4B",
+  },
+  detailsCardSection: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#EEF0F8",
+    width: '100%'
+  },
+  detailsSectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  detailsReqItemBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#EEF0F8",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  detailsReqCheckCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#111C4B",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailsSkillBadge: {
+    backgroundColor: "#EEF2FF",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  detailsSkillBadgeText: {
+    color: "#2623D3",
+    fontSize: 12,
+    fontWeight: "700",
   },
 });
 

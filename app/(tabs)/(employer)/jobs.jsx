@@ -3,15 +3,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Modal,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Modal,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TopNav } from "../../../components/Navigations";
@@ -153,7 +153,7 @@ export default function EmployerJobsScreen() {
 
       // Kuhaon lang ang jobs nga wala gi-archive.
       const { data, error } = await supabase
-        .from("jobs")
+        .from("jobLists")
         .select("*")
         .eq("employer_id", user.id)
         .eq("is_archived", false)
@@ -330,7 +330,7 @@ if (jobIds.length > 0) {
       if (!user) throw new Error("Please log in first.");
 
       const { error } = await supabase
-        .from("jobs")
+        .from("jobLists")
         .insert({
           employer_id: user.id,
           title: title.trim(),

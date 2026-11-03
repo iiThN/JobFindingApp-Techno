@@ -1,5 +1,4 @@
-
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather, FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
@@ -14,11 +13,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import styles from "../../../components/stylesIn";
 import { useApplications } from "../../../context/ApplicationsContext";
+import { useAuth } from "../../../context/AuthContext";
 import { supabase } from "../../../lib/supabase";
 
 export default function JobDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const { currentUser, toggleBookmark } = useAuth();
 
   const { hasApplied } = useApplications();
   const applied = hasApplied(id);
@@ -27,7 +28,9 @@ export default function JobDetails() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Kuhaon ang job details gamit ang UUID.
+  const savedJobs = currentUser?.savedJobs || [];
+  const isSaved = savedJobs.some((savedId) => String(savedId) === String(id));
+
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -37,7 +40,7 @@ export default function JobDetails() {
         setErrorMessage("");
 
         const { data, error } = await supabase
-          .from("jobs")
+          .from("jobLists")
           .select(`
             *,
             profiles:employer_id (
@@ -87,167 +90,207 @@ export default function JobDetails() {
     ? job.skills.split(/,|\n/).map((s) => s.trim()).filter(Boolean)
     : [];
 
+    const companyName = job?.company_name || "Employer";
+    const companyInitial = companyName.charAt(0).toUpperCase();
+
   return (
     <SafeAreaView
-      style={styles.detailsContainer}
+      style={[styles.detailsContainer, { backgroundColor: "#2623D3" }]}
       edges={["top", "bottom"]}
     >
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="#F6F8FF"
+        barStyle="light-content"
+        backgroundColor="#2623D3"
       />
 
+      <View style={styles.detailsHeaderBanner}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Feather name="arrow-left" size={22} color="#FFFFFF" />
+        </TouchableOpacity>
+
+        <Text style={styles.detailsHeaderTitle}>
+          Job Details
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => toggleBookmark(id)}
+          accessibilityRole="button"
+          accessibilityLabel={isSaved ? "Remove saved job" : "Save job"}
+        >
+          <MaterialCommunityIcons
+            name={isSaved ? "bookmark" : "bookmark-outline"}
+            size={24}
+            color={isSaved ? "#FFD166" : "#FFFFFF"}
+          />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
-        contentContainerStyle={styles.detailsContent}
+        contentContainerStyle={styles.detailsScrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.detailsTop}>
-          <TouchableOpacity
-            style={styles.detailsBack}
-            onPress={() => router.back()}
-          >
-            <Feather
-              name="arrow-left"
-              size={23}
-              color="#14204A"
-            />
-          </TouchableOpacity>
-
-          <Text style={styles.detailsTopTitle}>
-            Job Details
-          </Text>
-
-          <View style={{ width: 42 }} />
-        </View>
-
         {loading ? (
           <ActivityIndicator
             size="large"
-            color="#2623D3"
+            color="#FFFFFF"
             style={{ marginTop: 40 }}
           />
         ) : !job ? (
-          <View style={styles.detailsPanel}>
+          <View style={[styles.detailsPanel, { borderWidth: 1, borderColor: "#EEF0F8", marginTop: 20 }]}>
             <Text style={styles.detailsTitle}>
               Job not found
             </Text>
-
             <Text style={styles.detailsBody}>
               {errorMessage || "This job is unavailable."}
             </Text>
           </View>
         ) : (
           <>
-            <View style={styles.detailsHero}>
-              <View
-                style={[
-                  styles.detailsLogo,
-                  { backgroundColor: "#E9ECFF" },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="briefcase-outline"
-                  size={36}
-                  color="#2623D3"
-                />
+            <View style={styles.jobDetailsCard}>
+              <View style={styles.jobDetailsPfp}>
+                <Text style={styles.jobDetailsInitialText}>
+                  {companyInitial}
+                </Text>
               </View>
-
-              <Text style={styles.detailsTitle}>
+              <View style={{
+                backgroundColor: job.status?.toLowerCase() === "open" ? "#ccf2e0" : "#ffd3d3",
+                paddingHorizontal: 12,
+                paddingVertical: 4,
+                borderRadius: 20,
+                alignSelf: "flex-end"
+              }}>
+                <Text style={{
+                  color: job.status?.toLowerCase() === "open" ? "#166534" : "#991B1B",
+                  fontSize: 11,
+                  fontWeight: "700"
+                }}>
+                  {job.status?.toUpperCase()}
+                </Text>
+              </View>
+              <Text style={styles.jobDetailsTitle}>
                 {job.title}
               </Text>
 
-              <Text style={styles.detailsCompany}>
-                {job.profiles?.name || "Employer"}
+              <Text style={styles.jobDetailsCompany}>
+                {companyName}
               </Text>
 
-              <View style={styles.detailsLocation}>
-                <Feather
-                  name="map-pin"
-                  size={15}
-                  color="#2623D3"
-                />
 
-                <Text style={styles.detailsBody}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <FontAwesome6 name="location-dot" size={13} color="#7D87A0" />
+                <Text style={{ color: "#7D87A0", fontSize: 13 }}>
                   {job.location}
                 </Text>
               </View>
+              <View style={styles.detailsStatsRow}>
+              {/* Salary Box */}
+              <View style={styles.detailsStatBox}>
+                <View style={styles.detailsStatIconBox}>
+                  <MaterialCommunityIcons name="wallet-outline" size={18} color="#2623D3" />
+                </View>
+                <View>
+                  <Text style={styles.detailsStatLabel}>
+                    Salary (Monthly)
+                  </Text>
+                  <Text style={styles.detailsStatValue}>
+                    ${job.salary} <Text style={{ fontSize: 11, color: "#8590A5", fontWeight: "400" }}>/ mo</Text>
+                  </Text>
+                </View>
+              </View>
+
+              {/* Employment Type Box */}
+              <View style={styles.detailsStatBox}>
+                <View style={styles.detailsStatIconBox}>
+                  <Feather name="briefcase" size={18} color="#2623D3" />
+                </View>
+                <View>
+                  <Text style={styles.detailsStatLabel}>
+                    Employment Type
+                  </Text>
+                  <Text style={styles.detailsStatValue}>
+                    {job.job_type || "Full-Time"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+            
+            <View style={styles.detailsCardSection}>
+              <View style={styles.detailsSectionHeaderRow}>
+                <Feather name="file-text" size={18} color="#2623D3" />
+                <Text style={{ fontSize: 16, fontWeight: "800", color: "#111C4B" }}>
+                  About the Role
+                </Text>
+              </View>
+
+              <Text style={{ fontSize: 13, color: "#56617B", lineHeight: 20 }}>
+                {job.description || "No description provided."}
+              </Text>
             </View>
 
-            <View style={styles.detailsFacts}>
-              <View style={styles.detailsFact}>
-                <Feather name="briefcase" size={19} color="#2623D3" />
-                <Text style={styles.detailsFactLabel}>Employment Type</Text>
-                <Text style={styles.detailsFactValue}>{job.job_type}</Text>
+            {/* 4. Requirements & Credentials */}
+            <View style={styles.detailsCardSection}>
+              <View style={styles.detailsSectionHeaderRow}>
+                <Feather name="check-circle" size={18} color="#2623D3" />
+                <Text style={{ fontSize: 16, fontWeight: "800", color: "#111C4B" }}>
+                  Requirements & Credentials
+                </Text>
+              </View>
+
+              <View style={{ gap: 8 }}>
+                {requirements.length > 0 ? (
+                  requirements.map((req, index) => (
+                    <View key={index} style={styles.detailsReqItemBox}>
+                      <View style={styles.detailsReqCheckCircle}>
+                        <Feather name="check" size={11} color="#FFFFFF" />
+                      </View>
+                      <Text style={{ fontSize: 13, color: "#111C4B", fontWeight: "500", flex: 1 }}>
+                        {req}
+                      </Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={{ fontSize: 13, color: "#7381A2" }}>
+                    No requirements specified.
+                  </Text>
+                )}
               </View>
             </View>
 
-            <View style={styles.detailsPanel}>
-              <Text style={styles.detailsSectionTitle}>
-                Salary
-              </Text>
-
-              <Text style={styles.detailsSalary}>
-                {job.salary || "Not specified"}
-              </Text>
-            </View>
-
-            <View style={styles.detailsPanel}>
-              <Text style={styles.detailsSectionTitle}>
-                About this Job
-              </Text>
-
-              <Text style={styles.detailsBody}>
-                {job.description}
-              </Text>
-            </View>
-
-            <View style={styles.detailsPanel}>
-              <Text style={styles.detailsSectionTitle}>
-                Requirements
-              </Text>
-
-              {requirements.length > 0 ? (
-                requirements.map((requirement, index) => (
-                  <Text
-                    key={index}
-                    style={styles.detailsRequirement}
-                  >
-                    {"•  "}{requirement}
-                  </Text>
-                ))
-              ) : (
-                <Text style={styles.detailsBody}>
-                  No requirements specified.
+            <View style={styles.detailsCardSection}>
+              <View style={styles.detailsSectionHeaderRow}>
+                <MaterialCommunityIcons name="code-tags" size={18} color="#2623D3" />
+                <Text style={{ fontSize: 16, fontWeight: "800", color: "#111C4B" }}>
+                  Key Skill Requirements
                 </Text>
-              )}
-            </View>
+              </View>
 
-            <View style={styles.detailsPanel}>
-              <Text style={styles.detailsSectionTitle}>
-                Key Skills
-              </Text>
-
-              {skills.length > 0 ? (
-                skills.map((skill, index) => (
-                  <Text
-                    key={index}
-                    style={styles.detailsRequirement}
-                  >
-                    {"•  "}{skill}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {skills.length > 0 ? (
+                  skills.map((skill, index) => (
+                    <View key={index} style={styles.detailsSkillBadge}>
+                      <Text style={styles.detailsSkillBadgeText}>
+                        {skill}
+                      </Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={{ fontSize: 13, color: "#7381A2" }}>
+                    No skills specified.
                   </Text>
-                ))
-              ) : (
-                <Text style={styles.detailsBody}>
-                  No skills specified.
-                </Text>
-              )}
+                )}
+              </View>
             </View>
+
+            </View>
+
+
+            
           </>
         )}
       </ScrollView>
 
       {job?.status === "Open" && (
-        <View style={styles.detailsFooter}>
+        <View style={[styles.detailsFooter, { backgroundColor: "#F6F8FF", padding: 16 }]}>
           <TouchableOpacity
             style={[
               styles.detailsApply,

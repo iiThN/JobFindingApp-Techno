@@ -3,14 +3,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -68,7 +68,7 @@ export default function Dashboard() {
       // Kuhaon ang employer jobs, apil ang archived.
       const { data: jobsData, error: jobsError } =
         await supabase
-          .from("jobs")
+          .from("jobLists")
           .select("id, title, status, is_archived")
           .eq("employer_id", user.id);
 

@@ -4,16 +4,16 @@ import * as DocumentPicker from "expo-document-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -73,7 +73,7 @@ export default function ApplyForJob() {
       setLoadingJob(true);
 
       const { data, error } = await supabase
-        .from("jobs")
+        .from("jobLists")
         .select(`
           id,
           title,
@@ -306,7 +306,7 @@ export default function ApplyForJob() {
     try {
       // Siguraduhon nga open pa ang job.
       const { data: openJob, error: jobError } = await supabase
-        .from("jobs")
+        .from("jobLists")
         .select("id")
         .eq("id", job.id)
         .eq("status", "Open")

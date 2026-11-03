@@ -2,11 +2,11 @@ import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -34,7 +34,7 @@ export default function SavedJobs() {
 
     setLoading(true);
     const { data, error } = await supabase
-      .from("jobs")
+      .from("jobLists")
       .select(`
         *,
         profiles:employer_id (

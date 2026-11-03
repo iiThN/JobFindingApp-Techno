@@ -34,7 +34,7 @@ export default function HomePage() {
     setLoading(true);
 
   const { data, error } = await supabase
-    .from("jobs")
+    .from("jobLists")
     .select(`
       *,
       profiles:employer_id (

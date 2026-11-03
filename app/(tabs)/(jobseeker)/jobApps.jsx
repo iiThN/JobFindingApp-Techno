@@ -2,12 +2,12 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -75,7 +75,7 @@ export default function JobApps() {
           if (jobIds.length > 0) {
             const { data: jobData, error: jobError } =
               await supabase
-                .from("jobs")
+                .from("jobLists")
                 .select(`
                   id,
                   title,
