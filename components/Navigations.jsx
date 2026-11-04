@@ -1,6 +1,13 @@
 import { Feather, FontAwesome, Ionicons, Octicons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
-import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+import { NotificationBell } from "./NotificationBell";
 
 export function TopNav() {
   const navigation = useNavigation("/(tabs)");
@@ -13,8 +20,13 @@ export function TopNav() {
         accessibilityLabel="Open menu"
         onPress={() => navigation.openDrawer()}
       >
-        <Feather name="menu" size={28} color="#111C4B" />
+        <Feather
+          name="menu"
+          size={28}
+          color="#111C4B"
+        />
       </TouchableOpacity>
+
       <View style={styles.topNavContainerRight}>
         <TouchableOpacity
           style={styles.topNavItem}
@@ -45,15 +57,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
+
   topNavContainerRight: {
-    flexDirection: 'row',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 30,
   },
+
   topNavItem: {
     justifyContent: "center",
     alignItems: "center",

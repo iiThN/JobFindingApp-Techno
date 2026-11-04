@@ -38,6 +38,9 @@ export default function JobApps() {
           const {
             data: { user },
           } = await supabase.auth.getUser();
+          if (authError) {
+            throw authError;
+          }
 
           if (!user?.id) {
             if (active) {
@@ -47,13 +50,14 @@ export default function JobApps() {
             return;
           }
 
+
           const { data, error } = await supabase
-            .from("applications")
-            .select(
-              "id, job_id, applicant_id, status, reply_from_employer, created_at"
-            )
-            .eq("applicant_id", user.id)
-            .order("created_at", { ascending: false });
+          .from("applications")
+          .select(
+            "id, job_id, applicant_id, status, reply_from_employer, created_at"
+          )
+          .eq("applicant_id", user.id)
+          .order("created_at", { ascending: false });
 
           if (error) {
             throw error;
@@ -75,13 +79,16 @@ export default function JobApps() {
                   location,
                   job_type,
                   salary,
+                  status,
                   profiles:employer_id (
                     name
                   )
                 `)
                 .in("id", jobIds);
 
-            if (!jobError) {
+            if (jobError) {
+              console.log("Related jobs loading error:", jobError.message);
+            } else {
               jobs = jobData || [];
             }
           }
@@ -108,6 +115,7 @@ export default function JobApps() {
                   relatedJob?.profiles?.name || "Employer",
                 type: relatedJob?.job_type || "",
                 salary: relatedJob?.salary || "",
+                status: relatedJob?.status || "Unavailable",
                 icon: "briefcase-outline",
                 color: "#E9ECFF",
               },
@@ -118,6 +126,7 @@ export default function JobApps() {
             setItems(mapped);
           }
         } catch (error) {
+          console.log("Applications loading error:", error);
           if (active) {
             setLoadError(
               error.message || "Failed to load applications."
@@ -152,10 +161,7 @@ export default function JobApps() {
     ).length;
 
   return (
-    <SafeAreaView
-      style={styles.container}
-      edges={["top"]}
-    >
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <TopNav />
 
       <ScrollView
@@ -295,19 +301,45 @@ export default function JobApps() {
           </View>
         ) : (
           <View style={{ gap: 12 }}>
-            {visible.map(({ application, job }) => (
-              <ApplicationCard
-                key={application.id}
-                job={job}
-                application={application}
-                onPress={() =>
-                  router.push({
-                    pathname: "/jobseekerModal/details/[id]",
-                    params: { id: job.id },
-                  })
-                }
-              />
-            ))}
+            {visible.map(({ application, job }) => {
+            const isClosed = job.status === "Closed";
+
+            return (
+              <View key={application.id} style={{ marginBottom: 14 }}>
+                <View
+                  style={{
+                    alignSelf: "flex-start",
+                    backgroundColor: isClosed ? "#FEE4E2" : "#D1FADF",
+                    paddingHorizontal: 10,
+                    paddingVertical: 5,
+                    borderRadius: 20,
+                    marginBottom: 7,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "700",
+                      color: isClosed ? "#B42318" : "#027A48",
+                    }}
+                  >
+                    Job: {job.status}
+                  </Text>
+                </View>
+
+                  <ApplicationCard
+                      job={job}
+                    application={application}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/jobseekerModal/details/[id]",
+                        params: { id: String(job.id) },
+                      })
+                    }
+                  />
+                </View>
+            );
+          })}
           </View>
         )}
       </ScrollView>
