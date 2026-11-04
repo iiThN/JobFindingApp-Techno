@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import JobCard from "../../../components/JobCard";
+import { TopNav } from "../../../components/Navigations"; // <--- Add this import!
 import { useAuth } from "../../../context/AuthContext";
 import { supabase } from "../../../lib/supabase";
 
@@ -30,8 +31,6 @@ export default function SavedJobsScreen() {
     try {
       const savedIds = currentUser?.savedJobs || [];
 
-      console.log("[SAVED JOBS] Saved job IDs:", savedIds);
-
       if (savedIds.length === 0) {
         setSavedJobs([]);
         setLoading(false);
@@ -48,11 +47,7 @@ export default function SavedJobsScreen() {
         `)
         .in("id", savedIds);
 
-      if (error) {
-        throw error;
-      }
-
-      console.log("[SAVED JOBS] Fetched jobs:", data);
+      if (error) throw error;
 
       const formattedJobs = (data || []).map((job) => ({
         ...job,
@@ -65,8 +60,6 @@ export default function SavedJobsScreen() {
 
       setSavedJobs(formattedJobs);
     } catch (error) {
-      console.log("[SAVED JOBS] Fetch error:", error);
-
       setLoadError(error.message || "Unable to load saved jobs.");
       setSavedJobs([]);
     } finally {
@@ -89,6 +82,9 @@ export default function SavedJobsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
+      {/* TopNav is back in its spot! */}
+      <TopNav />
+
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
