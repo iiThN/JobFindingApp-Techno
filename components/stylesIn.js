@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
 
   homeSearchBox: {
     flex: 1,
-    height: 51,
+    height: 48,
     backgroundColor: "#FFFFFF",
     borderRadius: 15,
     flexDirection: "row",
@@ -186,14 +186,15 @@ const styles = StyleSheet.create({
   homeSearchInput: {
     flex: 1,
     color: "#1D2A50",
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: '500'
   },
 
   homeFilter: {
-    width: 51,
-    height: 51,
+    width: 48,
+    height: 48,
     backgroundColor: "#2623D3",
-    borderRadius: 15,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -648,9 +649,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    backgroundColor: "#F6F8FF",
     borderBottomWidth: 1,
     borderColor: "#EEF0F8",
   },
@@ -781,7 +782,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EEF2FF",
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: 50,
     borderWidth: 1,
     borderColor: "#C7D2FE",
   },
@@ -795,8 +796,9 @@ const styles = StyleSheet.create({
   // Add these inside your existing stylesheet object in stylesIn.js:
   detailsHeaderBanner: {
     backgroundColor: "#2623D3",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",

@@ -1,16 +1,17 @@
-import { Feather, FontAwesome, Ionicons, Octicons } from "@expo/vector-icons";
-import { useNavigation } from "expo-router";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { useNavigation, useRouter } from "expo-router";
 import {
-  Alert,
   StyleSheet,
   TouchableOpacity,
   View,
+  Text
 } from "react-native";
 
 import { NotificationBell } from "./NotificationBell";
 
 export function TopNav() {
   const navigation = useNavigation("/(tabs)");
+  const router = useRouter();
 
   return (
     <View style={styles.topNavContainer}>
@@ -32,19 +33,18 @@ export function TopNav() {
           style={styles.topNavItem}
           activeOpacity={0.5}
           accessibilityLabel="Search"
-          onPress={() => Alert.alert("Search", "Coming soon.")}
+          onPress={() =>
+            router.push("/jobseekerModal/search/searchModal")
+          }
         >
-          <Ionicons name="search" size={24} color="#111C4B" />
+          <Ionicons
+            name="search"
+            size={24}
+            color="#111C4B"
+          />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.topNavItem}
-          activeOpacity={0.5}
-          accessibilityLabel="Notifications"
-          onPress={() => Alert.alert("Notifications", "Coming soon.")}
-        >
-          <Ionicons name="notifications" size={24} color="#111C4B" />
-        </TouchableOpacity>
+        <NotificationBell />
       </View>
     </View>
   );
@@ -58,13 +58,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 6,
+    paddingBottom: 8,
   },
 
   topNavContainerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 30,
+    gap: 24,
   },
 
   topNavItem: {
