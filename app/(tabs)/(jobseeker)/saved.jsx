@@ -70,7 +70,7 @@ export default function SavedJobs() {
   };
 
   return (
-    <View style={styles.container}>
+
       <SafeAreaView
         style={styles.homeContainer}
         edges={["top"]}
@@ -189,6 +189,6 @@ export default function SavedJobs() {
           )}
         </ScrollView>
       </SafeAreaView>
-    </View>
+
   );
 }

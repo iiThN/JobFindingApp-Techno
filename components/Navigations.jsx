@@ -1,4 +1,4 @@
-import { Feather, FontAwesome, Octicons } from "@expo/vector-icons";
+import { Feather, FontAwesome, Ionicons, Octicons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
 import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
 
@@ -19,10 +19,10 @@ export function TopNav() {
         <TouchableOpacity
           style={styles.topNavItem}
           activeOpacity={0.5}
-          accessibilityLabel="Notifications"
-          onPress={() => Alert.alert("Notifications", "Coming soon.")}
+          accessibilityLabel="Search"
+          onPress={() => Alert.alert("Search", "Coming soon.")}
         >
-          <FontAwesome name="search" size={24} color="#111C4B" />
+          <Ionicons name="search" size={24} color="#111C4B" />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -31,7 +31,7 @@ export function TopNav() {
           accessibilityLabel="Notifications"
           onPress={() => Alert.alert("Notifications", "Coming soon.")}
         >
-          <Octicons name="bell-fill" size={24} color="#111C4B" />
+          <Ionicons name="notifications" size={24} color="#111C4B" />
         </TouchableOpacity>
       </View>
     </View>
@@ -45,8 +45,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop:8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   topNavContainerRight: {
     flexDirection: 'row',
