@@ -1,20 +1,23 @@
-
-import { useFocusEffect } from "expo-router";
+import { Feather } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
+  ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import JobCard from "../../../components/JobCard";
+import { TopNav } from "../../../components/Navigations"; // <--- Add this import!
 import { useAuth } from "../../../context/AuthContext";
 import { supabase } from "../../../lib/supabase";
 
 export default function SavedJobsScreen() {
+  const router = useRouter();
   const { currentUser } = useAuth();
 
   const [savedJobs, setSavedJobs] = useState([]);
@@ -28,10 +31,9 @@ export default function SavedJobsScreen() {
     try {
       const savedIds = currentUser?.savedJobs || [];
 
-      console.log("[SAVED JOBS] Saved job IDs:", savedIds);
-
       if (savedIds.length === 0) {
         setSavedJobs([]);
+        setLoading(false);
         return;
       }
 
@@ -45,16 +47,7 @@ export default function SavedJobsScreen() {
         `)
         .in("id", savedIds);
 
-      if (error) {
-        throw error;
-      }
-
-      console.log("[SAVED JOBS] Fetched jobs:", data);
-      console.log("[SAVED JOBS] Expected IDs:", savedIds);
-      console.log(
-        "[SAVED JOBS] Retrieved IDs:",
-        (data || []).map((job) => job.id)
-      );
+      if (error) throw error;
 
       const formattedJobs = (data || []).map((job) => ({
         ...job,
@@ -66,13 +59,9 @@ export default function SavedJobsScreen() {
       }));
 
       setSavedJobs(formattedJobs);
-
     } catch (error) {
-      console.log("[SAVED JOBS] Fetch error:", error);
-
       setLoadError(error.message || "Unable to load saved jobs.");
       setSavedJobs([]);
-
     } finally {
       setLoading(false);
     }
@@ -84,81 +73,113 @@ export default function SavedJobsScreen() {
     }, [currentUser?.savedJobs])
   );
 
-  const renderSavedJob = ({ item }) => {
-    const isClosed =
-      item.status?.toLowerCase() === "closed";
-
-    return (
-      <View style={styles.jobContainer}>
-        <View style={styles.statusContainer}>
-          <View
-            style={[
-              styles.statusBadge,
-              isClosed
-                ? styles.closedBadge
-                : styles.openBadge,
-            ]}
-          >
-            <Text
-              style={[
-                styles.statusText,
-                isClosed
-                  ? styles.closedText
-                  : styles.openText,
-              ]}
-            >
-              {item.status || "Unknown"}
-            </Text>
-          </View>
-        </View>
-
-        <JobCard job={item} />
-      </View>
-    );
+  const openJob = (id) => {
+    router.push({
+      pathname: "/jobseekerModal/details/[id]",
+      params: { id: String(id) },
+    });
   };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Saved Jobs</Text>
-        <Text style={styles.subtitle}>
-          Jobs you have bookmarked
-        </Text>
-      </View>
+      {/* TopNav is back in its spot! */}
+      <TopNav />
 
-      {loading ? (
-        <ActivityIndicator
-          size="large"
-          color="#4F46E5"
-          style={styles.loader}
-        />
-      ) : loadError ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>
-            Unable to load saved jobs
-          </Text>
-          <Text style={styles.emptyText}>
-            {loadError}
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: 30 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>Saved Jobs</Text>
+          <Text style={styles.subtitle}>
+            Jobs you have bookmarked
           </Text>
         </View>
-      ) : savedJobs.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>
-            No saved jobs yet
-          </Text>
-          <Text style={styles.emptyText}>
-            Jobs you bookmark will appear here.
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={savedJobs}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={renderSavedJob}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#2623D3"
+            style={{ marginTop: 40 }}
+          />
+        ) : savedJobs.length > 0 ? (
+          savedJobs.map((job) => (
+            <View
+              key={job.id}
+              style={{ marginBottom: 12 }}
+            >
+              <JobCard
+                job={job}
+                onPress={() => openJob(job.id)}
+              />
+            </View>
+          ))
+        ) : (
+          <View
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: 60,
+              paddingHorizontal: 20,
+            }}
+          >
+            <Feather
+              name="bookmark"
+              size={48}
+              color="#A1AAC0"
+            />
+
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: "#20233A",
+                marginTop: 16,
+              }}
+            >
+              No saved jobs yet
+            </Text>
+
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#7D87A0",
+                textAlign: "center",
+                marginTop: 8,
+                lineHeight: 21,
+              }}
+            >
+              Browse jobs on the Home tab and tap the
+              bookmark icon to save the ones you like.
+            </Text>
+
+            <TouchableOpacity
+              onPress={() =>
+                router.navigate("/(tabs)/(jobseeker)")
+              }
+              style={{
+                backgroundColor: "#2623D3",
+                paddingVertical: 12,
+                paddingHorizontal: 22,
+                borderRadius: 10,
+                marginTop: 20,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#FFFFFF",
+                  fontWeight: "600",
+                }}
+              >
+                Browse Jobs
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -166,74 +187,22 @@ export default function SavedJobsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FC",
+    backgroundColor: "#F6F8FF",
+  },
+  scrollContent: {
+    padding: 20,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#171717",
+    fontSize: 26,
+    fontWeight: "bold",
+    color: "#20233A",
   },
   subtitle: {
     fontSize: 14,
-    color: "#777",
+    color: "#7D87A0",
     marginTop: 4,
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-  },
-  jobContainer: {
-    marginBottom: 14,
-  },
-  statusContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginBottom: 6,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
-  openBadge: {
-    backgroundColor: "#DCFCE7",
-  },
-  closedBadge: {
-    backgroundColor: "#FEE2E2",
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  openText: {
-    color: "#15803D",
-  },
-  closedText: {
-    color: "#B91C1C",
-  },
-  loader: {
-    marginTop: 40,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 30,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 6,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#777",
-    textAlign: "center",
   },
 });

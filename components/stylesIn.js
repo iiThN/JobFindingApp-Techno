@@ -4,15 +4,15 @@ const styles = StyleSheet.create({
   // Existing styles
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#F6F8FF",
   },
 
   scrollContent: {
     flex: 1,
-    padding: 20,
+    padding: 12,
     paddingBottom: 90,
     minHeight: "100%",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#F6F8FF",
   },
 
   // Existing drawer styles
@@ -126,8 +126,7 @@ const styles = StyleSheet.create({
   },
 
   homeContent: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
+    padding: 12,
     paddingBottom: 105,
   },
 
@@ -173,7 +172,7 @@ const styles = StyleSheet.create({
 
   homeSearchBox: {
     flex: 1,
-    height: 51,
+    height: 48,
     backgroundColor: "#FFFFFF",
     borderRadius: 15,
     flexDirection: "row",
@@ -187,14 +186,15 @@ const styles = StyleSheet.create({
   homeSearchInput: {
     flex: 1,
     color: "#1D2A50",
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: '500'
   },
 
   homeFilter: {
-    width: 51,
-    height: 51,
+    width: 48,
+    height: 48,
     backgroundColor: "#2623D3",
-    borderRadius: 15,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -649,9 +649,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    backgroundColor: "#F6F8FF",
     borderBottomWidth: 1,
     borderColor: "#EEF0F8",
   },
@@ -782,7 +782,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EEF2FF",
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: 50,
     borderWidth: 1,
     borderColor: "#C7D2FE",
   },
@@ -796,8 +796,9 @@ const styles = StyleSheet.create({
   // Add these inside your existing stylesheet object in stylesIn.js:
   detailsHeaderBanner: {
     backgroundColor: "#2623D3",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -928,6 +929,99 @@ const styles = StyleSheet.create({
   detailsSkillBadgeText: {
     color: "#2623D3",
     fontSize: 12,
+    fontWeight: "700",
+  },
+
+  // jobApps style
+  jobAppsHeading: {
+    fontSize: 25,
+    fontWeight: "800",
+    color: "#111C4B",
+  },
+  jobAppsSubtitle: {
+    fontSize: 13,
+    color: "#5B6788",
+    marginTop: 6,
+  },
+  jobAppsStatsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 20,
+  },
+  jobAppsStatCard: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 17,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#EDF0F7",
+  },
+  jobAppsStatMain: {
+    backgroundColor: "#2623D3",
+    borderColor: "#2623D3",
+  },
+  jobAppsStatNumber: {
+    fontSize: 26,
+    fontWeight: "800",
+  },
+  jobAppsStatLabel: {
+    fontSize: 12,
+    color: "#5B6788",
+    marginTop: 4,
+  },
+  jobAppsChipRow: {
+    marginTop: 20,
+    marginBottom: 16,
+    flexGrow: 0,
+  },
+  jobAppsChip: {
+    height: 40,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginRight: 8,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E1E5F2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  jobAppsChipActive: {
+    backgroundColor: "#2623D3",
+    borderColor: "#2623D3",
+  },
+  jobAppsChipText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#111C4B",
+  },
+  jobAppsChipTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
+  jobAppsEmptyContainer: {
+    alignItems: "center",
+    paddingVertical: 50,
+    gap: 8,
+  },
+  jobAppsEmptyTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#111C4B",
+  },
+  jobAppsEmptyBody: {
+    fontSize: 13,
+    color: "#5B6788",
+  },
+  jobAppsEmptyButton: {
+    marginTop: 10,
+    backgroundColor: "#2623D3",
+    borderRadius: 15,
+    paddingVertical: 14,
+    paddingHorizontal: 26,
+  },
+  jobAppsEmptyButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
     fontWeight: "700",
   },
 });

@@ -1,4 +1,3 @@
-
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
@@ -7,50 +6,47 @@ import {
   Alert,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import JobCard from "../../../components/JobCard";
-import JobFilterModal from "../../../components/JobFilterModal";
 import { TopNav } from "../../../components/Navigations";
 import styles from "../../../components/stylesIn";
 import { useAuth } from "../../../context/AuthContext";
 import { supabase } from "../../../lib/supabase";
 
-export default function HomePage() {
+const QUICK_CATEGORIES = [
+  { label: "Internship / OJT", type: "Internship / OJT" },
+  { label: "Full-Time", type: "Full-Time" },
+  { label: "Part-Time", type: "Part-Time" },
+  { label: "Contract", type: "Contract" },
+];
+
+export default function HomePageOption1() {
   const router = useRouter();
   const { currentUser } = useAuth();
 
   const [jobs, setJobs] = useState([]);
-  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [filterVisible, setFilterVisible] = useState(false);
-  const [filters, setFilters] = useState({
-    jobType: "All",
-    location: "",
-    skill: "",
-  });
 
   const name = currentUser?.name?.split(" ")[0] || "there";
 
-  // Kuhaon ang open jobs gikan sa Supabase.
   const fetchJobs = async () => {
     setLoading(true);
 
-  const { data, error } = await supabase
-    .from("jobLists")
-    .select(`
-      *,
-      profiles:employer_id (
-        name
-      )
-    `)
-    .eq("status", "Open")
-    .eq("is_archived", false)
-    .order("created_at", { ascending: false });
+    const { data, error } = await supabase
+      .from("jobLists")
+      .select(`
+        *,
+        profiles:employer_id (
+          name
+        )
+      `)
+      .eq("status", "Open")
+      .eq("is_archived", false)
+      .order("created_at", { ascending: false });
 
     if (error) {
       Alert.alert("Error", error.message);
@@ -58,10 +54,10 @@ export default function HomePage() {
       return;
     }
 
-    // I-convert ang database fields para sa JobCard.
     const formattedJobs = (data || []).map((job) => ({
       ...job,
       company: job.profiles?.name || "Employer",
+      company_name: job.profiles?.name || "Employer",
       type: job.job_type,
       icon: "briefcase-outline",
       color: "#E9ECFF",
@@ -71,7 +67,6 @@ export default function HomePage() {
     setLoading(false);
   };
 
-  // I-refresh ang jobs kada balik sa Home.
   useFocusEffect(
     useCallback(() => {
       fetchJobs();
@@ -85,97 +80,79 @@ export default function HomePage() {
     });
   };
 
-  // Search and filter the jobs already loaded from Supabase.
-  const filteredJobs = jobs.filter((job) => {
-    const keyword = search.toLowerCase().trim();
-    const searchText = [job.title, job.company, job.location, job.skills]
-      .map((value) => Array.isArray(value) ? value.join(" ") : String(value || ""))
-      .join(" ")
-      .toLowerCase();
-
-    const type = String(job.job_type || job.type || "").toLowerCase();
-    const selectedType = filters.jobType.toLowerCase();
-    const matchesType = selectedType === "all" ||
-      (selectedType === "internship / ojt"
-        ? type.includes("internship") || type.includes("ojt")
-        : type.replace(/[\s-]/g, "") === selectedType.replace(/[\s-]/g, ""));
-    const matchesLocation = !filters.location.trim() ||
-      String(job.location || "").toLowerCase().includes(filters.location.trim().toLowerCase());
-    const matchesSkill = !filters.skill.trim() ||
-      String(Array.isArray(job.skills) ? job.skills.join(", ") : job.skills || "")
-        .toLowerCase().includes(filters.skill.trim().toLowerCase());
-
-    return (!keyword || searchText.includes(keyword)) && matchesType && matchesLocation && matchesSkill;
-  });
-
-  const activeFilterCount = [
-    filters.jobType !== "All",
-    Boolean(filters.location.trim()),
-    Boolean(filters.skill.trim()),
-  ].filter(Boolean).length;
+  const openCategorySearch = (type) => {
+    router.push({
+      pathname: "/jobseekerModal/search/searchedDisplay",
+      params: { jobType: type },
+    });
+  };
 
   return (
     <SafeAreaView style={styles.homeContainer} edges={["top"]}>
       <TopNav />
 
-      <JobFilterModal
-        visible={filterVisible}
-        filters={filters}
-        onClose={() => setFilterVisible(false)}
-        onApply={(nextFilters) => { setFilters(nextFilters); setFilterVisible(false); }}
-        onReset={() => { setFilters({ jobType: "All", location: "", skill: "" }); setFilterVisible(false); }}
-      />
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.homeContent}
       >
+        {/* Header Greeting */}
         <View style={styles.homeHeader}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.homeMorning}>
-              Good morning,
-            </Text>
-
-            <Text style={styles.homeGreeting}>
-              Hi, {name}! 👋
-            </Text>
-
+            <Text style={styles.homeMorning}>Good morning,</Text>
+            <Text style={styles.homeGreeting}>Hi, {name}! 👋</Text>
             <Text style={styles.homeSubtitle}>
-              Find the right job for your next chapter.
+              Find verified student-friendly jobs & OJT placements.
             </Text>
           </View>
         </View>
 
-        <View style={styles.homeSearchRow}>
-          <View style={styles.homeSearchBox}>
-            <Feather
-              name="search"
-              size={20}
-              color="#7D87A0"
-            />
-
-            <TextInput
-              style={styles.homeSearchInput}
-              placeholder="Job title, skill or company"
-              placeholderTextColor="#9299AB"
-              value={search}
-              onChangeText={setSearch}
-            />
-          </View>
-
-          <TouchableOpacity
-            style={styles.homeFilter}
-            onPress={() => setFilterVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Open job filters"
+        {/* Quick Category Pills */}
+        <View style={{ marginTop: 20, marginBottom: 25 }}>
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: "700",
+              color: "#7381A2",
+              marginBottom: 10,
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+            }}
           >
-            <Feather name="sliders" size={21} color="#FFFFFF" />
-            {activeFilterCount > 0 && (
-              <View style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: "#FFB547", alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ color: "#111C4B", fontSize: 10, fontWeight: "800" }}>{activeFilterCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+            Quick Categories
+          </Text>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8 }}
+          >
+            {QUICK_CATEGORIES.map((cat) => (
+              <TouchableOpacity
+                key={cat.type}
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  borderWidth: 1,
+                  borderColor: "#EEF0F8",
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 50,
+
+                }}
+                activeOpacity={0.7}
+                onPress={() => openCategorySearch(cat.type)}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "700",
+                    color: "#2623D3",
+                  }}
+                >
+                  {cat.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
 
         {loading ? (
@@ -186,23 +163,21 @@ export default function HomePage() {
           />
         ) : (
           <>
+            {/* Recommended Jobs */}
             <View style={styles.homeSectionHeader}>
               <View style={styles.homeHeadingRow}>
-                <MaterialCommunityIcons
-                  name="creation"
-                  size={22}
-                  color="#2623D3"
-                />
-
-                <Text style={styles.homeHeading}>
-                  Recommended for you
-                </Text>
+                <MaterialCommunityIcons name="creation" size={22} color="#2623D3" />
+                <Text style={styles.homeHeading}>Recommended for you</Text>
               </View>
 
-              <TouchableOpacity onPress={() => router.push({
-                pathname: "/jobseekerModal/allJobList",
-                params: { title: "Recommended Jobs" }
-              })}>
+              <TouchableOpacity
+                onPress={() =>
+                  router.push({
+                    pathname: "/jobseekerModal/allJobList",
+                    params: { title: "Recommended Jobs" },
+                  })
+                }
+              >
                 <Text style={styles.homeSeeAll}>See all</Text>
               </TouchableOpacity>
             </View>
@@ -212,7 +187,7 @@ export default function HomePage() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.homeHorizontal}
             >
-              {filteredJobs.slice(0).map((job) => (
+              {jobs.map((job) => (
                 <JobCard
                   key={job.id}
                   job={job}
@@ -222,34 +197,27 @@ export default function HomePage() {
               ))}
             </ScrollView>
 
-            <View
-              style={[
-                styles.homeSectionHeader,
-                { marginTop: 27 },
-              ]}
-            >
+            {/* Latest Jobs */}
+            <View style={[styles.homeSectionHeader, { marginTop: 27 }]}>
               <View style={styles.homeHeadingRow}>
-                <Feather
-                  name="briefcase"
-                  size={21}
-                  color="#2623D3"
-                />
-
-                <Text style={styles.homeHeading}>
-                  Latest jobs
-                </Text>
+                <Feather name="briefcase" size={21} color="#2623D3" />
+                <Text style={styles.homeHeading}>Latest jobs</Text>
               </View>
 
-              <TouchableOpacity onPress={() => router.push({
-                pathname: "/jobseekerModal/allJobList",
-                params: { title: "Latest Jobs" }
-              })}>
+              <TouchableOpacity
+                onPress={() =>
+                  router.push({
+                    pathname: "/jobseekerModal/allJobList",
+                    params: { title: "Latest Jobs" },
+                  })
+                }
+              >
                 <Text style={styles.homeSeeAll}>See all</Text>
               </TouchableOpacity>
-
             </View>
-            <View style={{gap: 12}}>
-              {filteredJobs.slice(0).map((job) => (
+
+            <View style={{ gap: 12 }}>
+              {jobs.map((job) => (
                 <JobCard
                   key={job.id}
                   job={job}
@@ -257,15 +225,9 @@ export default function HomePage() {
                 />
               ))}
 
-              {filteredJobs.length === 0 && (
-                <Text
-                  style={{
-                    textAlign: "center",
-                    marginTop: 30,
-                    color: "#7381A2",
-                  }}
-                >
-                  No jobs found.
+              {jobs.length === 0 && (
+                <Text style={{ textAlign: "center", marginTop: 30, color: "#7381A2" }}>
+                  No jobs available right now.
                 </Text>
               )}
             </View>

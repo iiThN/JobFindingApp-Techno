@@ -134,6 +134,21 @@ export default function RootLayout() {
             />
 
             <Stack.Screen
+              name="jobseekerModal/search/searchModal"
+              options={{
+                headerShown: false,
+                presentation: "modal",
+              }}
+            />
+
+            <Stack.Screen
+              name="jobseekerModal/search/searchedDisplay"
+              options={{
+                headerShown: false,
+              }}
+            />    
+
+            <Stack.Screen
               name="employerModal/applicant-detail/[id]"
               options={{
                 headerShown: true,
@@ -181,6 +196,7 @@ export default function RootLayout() {
                 headerLeft: renderCustomBackBtn,
               }}
             />
+            
           </Stack>
         </ApplicationsProvider>
       </NotificationsProvider>

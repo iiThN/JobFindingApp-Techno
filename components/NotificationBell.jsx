@@ -1,4 +1,4 @@
-import { Octicons } from "@expo/vector-icons";
+import { Ionicons, Octicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
     StyleSheet,
@@ -20,8 +20,8 @@ export function NotificationBell() {
       accessibilityLabel={`Notifications, ${unreadCount} unread`}
       onPress={() => router.push("/notifications")}
     >
-      <Octicons
-        name="bell-fill"
+      <Ionicons
+        name="notifications"
         size={24}
         color="#111C4B"
       />

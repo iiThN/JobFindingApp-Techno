@@ -156,7 +156,7 @@ export default function JobDetails() {
           <MaterialCommunityIcons
             name={isSaved ? "bookmark" : "bookmark-outline"}
             size={24}
-            color={isSaved ? "#FFD166" : "#FFFFFF"}
+            color={isSaved ? "#FFD166" : "#c2cade"}
           />
         </TouchableOpacity>
       </View>

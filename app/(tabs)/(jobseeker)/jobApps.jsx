@@ -1,17 +1,17 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import ApplicationCard from "../../../components/ApplicationCard";
 import { TopNav } from "../../../components/Navigations";
+import styles from "../../../components/stylesIn";
 import { useAuth } from "../../../context/AuthContext";
 import { supabase } from "../../../lib/supabase";
 
@@ -37,9 +37,7 @@ export default function JobApps() {
         try {
           const {
             data: { user },
-            error: authError,
           } = await supabase.auth.getUser();
-
           if (authError) {
             throw authError;
           }
@@ -52,20 +50,19 @@ export default function JobApps() {
             return;
           }
 
-          // Get the logged-in user's applications.
+
           const { data, error } = await supabase
-            .from("applications")
-            .select(
-              "id, job_id, applicant_id, status, reply_from_employer, created_at"
-            )
-            .eq("applicant_id", user.id)
-            .order("created_at", { ascending: false });
+          .from("applications")
+          .select(
+            "id, job_id, applicant_id, status, reply_from_employer, created_at"
+          )
+          .eq("applicant_id", user.id)
+          .order("created_at", { ascending: false });
 
           if (error) {
             throw error;
           }
 
-          // Get the related jobs, including their current status.
           const jobIds = [
             ...new Set((data || []).map((item) => item.job_id)),
           ];
@@ -130,7 +127,6 @@ export default function JobApps() {
           }
         } catch (error) {
           console.log("Applications loading error:", error);
-
           if (active) {
             setLoadError(
               error.message || "Failed to load applications."
@@ -169,22 +165,22 @@ export default function JobApps() {
       <TopNav />
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.heading}>
+        <Text style={styles.jobAppsHeading}>
           My Applications
         </Text>
 
-        <Text style={styles.subtitle}>
+        <Text style={styles.jobAppsSubtitle}>
           Track every job you have applied for.
         </Text>
 
-        <View style={styles.stats}>
-          <View style={[styles.stat, styles.statMain]}>
+        <View style={styles.jobAppsStatsRow}>
+          <View style={[styles.jobAppsStatCard, styles.jobAppsStatMain]}>
             <Text
               style={[
-                styles.statNumber,
+                styles.jobAppsStatNumber,
                 { color: "#FFFFFF" },
               ]}
             >
@@ -193,7 +189,7 @@ export default function JobApps() {
 
             <Text
               style={[
-                styles.statLabel,
+                styles.jobAppsStatLabel,
                 { color: "#DBE1FF" },
               ]}
             >
@@ -201,32 +197,32 @@ export default function JobApps() {
             </Text>
           </View>
 
-          <View style={styles.stat}>
+          <View style={styles.jobAppsStatCard}>
             <Text
               style={[
-                styles.statNumber,
+                styles.jobAppsStatNumber,
                 { color: "#7A4E00" },
               ]}
             >
               {count("Pending")}
             </Text>
 
-            <Text style={styles.statLabel}>
+            <Text style={styles.jobAppsStatLabel}>
               Pending
             </Text>
           </View>
 
-          <View style={styles.stat}>
+          <View style={styles.jobAppsStatCard}>
             <Text
               style={[
-                styles.statNumber,
+                styles.jobAppsStatNumber,
                 { color: "#B42318" },
               ]}
             >
               {count("Rejected")}
             </Text>
 
-            <Text style={styles.statLabel}>
+            <Text style={styles.jobAppsStatLabel}>
               Rejected
             </Text>
           </View>
@@ -235,7 +231,7 @@ export default function JobApps() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.chipRow}
+          style={styles.jobAppsChipRow}
         >
           {FILTERS.map((name) => {
             const selected = filter === name;
@@ -244,15 +240,15 @@ export default function JobApps() {
               <TouchableOpacity
                 key={name}
                 style={[
-                  styles.chip,
-                  selected && styles.chipActive,
+                  styles.jobAppsChip,
+                  selected && styles.jobAppsChipActive,
                 ]}
                 onPress={() => setFilter(name)}
               >
                 <Text
                   style={[
-                    styles.chipText,
-                    selected && styles.chipTextActive,
+                    styles.jobAppsChipText,
+                    selected && styles.jobAppsChipTextActive,
                   ]}
                 >
                   {name}
@@ -269,24 +265,24 @@ export default function JobApps() {
             style={{ marginTop: 40 }}
           />
         ) : loadError ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>
+          <View style={styles.jobAppsEmptyContainer}>
+            <Text style={styles.jobAppsEmptyTitle}>
               Unable to load applications
             </Text>
 
-            <Text style={styles.emptyBody}>
+            <Text style={styles.jobAppsEmptyBody}>
               {loadError}
             </Text>
           </View>
         ) : visible.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>
+          <View style={styles.jobAppsEmptyContainer}>
+            <Text style={styles.jobAppsEmptyTitle}>
               {items.length === 0
                 ? "No applications yet"
                 : `No ${filter} applications`}
             </Text>
 
-            <Text style={styles.emptyBody}>
+            <Text style={styles.jobAppsEmptyBody}>
               {items.length === 0
                 ? "Jobs you apply to will show up here."
                 : "Try another filter."}
@@ -294,17 +290,18 @@ export default function JobApps() {
 
             {items.length === 0 && (
               <TouchableOpacity
-                style={styles.emptyButton}
+                style={styles.jobAppsEmptyButton}
                 onPress={() => router.navigate("/")}
               >
-                <Text style={styles.emptyButtonText}>
+                <Text style={styles.jobAppsEmptyButtonText}>
                   Browse jobs
                 </Text>
               </TouchableOpacity>
             )}
           </View>
         ) : (
-          visible.map(({ application, job }) => {
+          <View style={{ gap: 12 }}>
+            {visible.map(({ application, job }) => {
             const isClosed = job.status === "Closed";
 
             return (
@@ -330,124 +327,22 @@ export default function JobApps() {
                   </Text>
                 </View>
 
-                <ApplicationCard
-                  job={job}
-                  application={application}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/jobseekerModal/details/[id]",
-                      params: { id: String(job.id) },
-                    })
-                  }
-                />
-              </View>
+                  <ApplicationCard
+                      job={job}
+                    application={application}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/jobseekerModal/details/[id]",
+                        params: { id: String(job.id) },
+                      })
+                    }
+                  />
+                </View>
             );
-          })
+          })}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F6F8FF",
-  },
-  content: {
-    paddingHorizontal: 19,
-    paddingTop: 20,
-    paddingBottom: 40,
-  },
-  heading: {
-    fontSize: 25,
-    fontWeight: "800",
-    color: "#111C4B",
-  },
-  subtitle: {
-    fontSize: 13,
-    color: "#5B6788",
-    marginTop: 6,
-  },
-  stats: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 20,
-  },
-  stat: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 17,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#EDF0F7",
-  },
-  statMain: {
-    backgroundColor: "#2623D3",
-    borderColor: "#2623D3",
-  },
-  statNumber: {
-    fontSize: 26,
-    fontWeight: "800",
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#5B6788",
-    marginTop: 4,
-  },
-  chipRow: {
-    marginTop: 20,
-    marginBottom: 16,
-    flexGrow: 0,
-  },
-  chip: {
-    height: 40,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginRight: 8,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E1E5F2",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  chipActive: {
-    backgroundColor: "#2623D3",
-    borderColor: "#2623D3",
-  },
-  chipText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#111C4B",
-  },
-  chipTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-  },
-  empty: {
-    alignItems: "center",
-    paddingVertical: 50,
-    gap: 8,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#111C4B",
-  },
-  emptyBody: {
-    fontSize: 13,
-    color: "#5B6788",
-  },
-  emptyButton: {
-    marginTop: 10,
-    backgroundColor: "#2623D3",
-    borderRadius: 15,
-    paddingVertical: 14,
-    paddingHorizontal: 26,
-  },
-  emptyButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-});
