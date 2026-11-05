@@ -146,7 +146,7 @@ export default function JobCard({
               style={styles.jobCardFeaturedSalary}
               numberOfLines={1}
             >
-              <Text style={{ fontSize: 16, fontWeight: "600" }}>${job.salary}</Text>
+              <Text style={{ fontSize: 16, fontWeight: "600" }}>₱{job.salary}</Text>
               <Text style={{ color: "#c2cade" }}>/mo</Text>
             </Text>
           </View>
@@ -222,7 +222,7 @@ export default function JobCard({
         <Text
           style={styles.jobCardSalary}
         >
-          <Text style={{ fontSize: 11, fontWeight: "600" }}>${job.salary}</Text>
+          <Text style={{ fontSize: 11, fontWeight: "600" }}>₱{job.salary}</Text>
           <Text style={{ color: "#7381A2" }}>/mo</Text>
         </Text>
       </View>

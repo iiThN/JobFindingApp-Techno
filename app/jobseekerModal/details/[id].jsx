@@ -268,7 +268,7 @@ export default function JobDetails() {
                         Salary (Monthly)
                       </Text>
                       <Text style={styles.detailsStatValue}>
-                        ${job.salary}
+                      ₱{job.salary}
                         <Text
                           style={{
                             fontSize: 11,
