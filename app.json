@@ -4,7 +4,7 @@
     "slug": "JobFindingApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/injob-logo.png",
+    "icon": "./assets/images/injob-app-icon.png",
     "scheme": "jobfindingapp",
     "userInterfaceStyle": "automatic",
     "ios": {
