@@ -1,11 +1,11 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -37,7 +37,9 @@ export default function JobApps() {
         try {
           const {
             data: { user },
+            error: authError,
           } = await supabase.auth.getUser();
+
           if (authError) {
             throw authError;
           }
